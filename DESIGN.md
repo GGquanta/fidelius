@@ -121,7 +121,7 @@ interface VaultRecord {
 
 角色：
 
-- canvas `hsl(40, 30%, 98%)` 纸面
+- canvas `hsl(40, 30%, 98%)` 纸面。纸面带一层淡方格瓷砖纹理：砖缝规则，砖面明度按混批打散，色相偏尘粉 / 蜜桃（338°–20°），禁止棋盘、正弦波、小循环与平滑噪波云。纹理是 `html` 的背景层，只透过 canvas，不盖 surface。其上叠垂直半透明 canvas 渐变（顶近隐、中下显），只改透明度，不算第四种色相渐变
 - surface `#FFFFFF` 抬升卡
 - hover `hsl(36, 24%, 94%)`
 - ink `hsl(24, 20%, 13%)` 主文字 13.5:1
@@ -186,7 +186,7 @@ interface VaultRecord {
 +------------+---------------------------------------+
 ```
 
-侧栏 272px，底为 canvas，与主区用一根 hairline 分开，让纸面坐在前面。结构：
+侧栏 272px，底为毛玻璃：半透明 canvas + `backdrop-filter` 模糊纸面纹理，与主区用一根 hairline 分开，让纸面坐在前面。`prefers-reduced-transparency` 时退回实色 canvas。结构：
 
 - 顶：印记 36px + 字标 + 一句脚注，下方一根分隔
 - 工作台：概览
@@ -260,7 +260,7 @@ interface VaultRecord {
 - `ProfilePanel` 个人资料
 - `EmptyState` `FieldBlock`
 
-装饰只三处：印记、空状态构图、氛围光径向 mesh。
+纸面瓷砖纹理是 canvas 材料，不是装饰。装饰只三处：印记、空状态构图、氛围光径向 mesh。
 
 ### 状态
 

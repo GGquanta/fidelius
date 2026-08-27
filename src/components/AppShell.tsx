@@ -101,7 +101,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="h-[100dvh] md:grid md:grid-cols-[272px_1fr]">
-      <aside className="flex h-auto flex-col border-b border-line bg-canvas md:h-[100dvh] md:border-b-0 md:border-r">
+      <aside className="sidebar-frost flex h-auto flex-col border-b border-line md:h-[100dvh] md:border-b-0 md:border-r">
         <Link to="/" className="mx-3 mt-3 flex items-center gap-3 rounded-lg px-2 py-3 hover:bg-hover">
           <SealMark size={36} />
           <span className="min-w-0">
@@ -210,7 +210,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
         <ProfilePanel open={profileOpen} onClose={() => setProfileOpen(false)} />
       </aside>
-      <div className="flex min-h-0 min-w-0 flex-col bg-canvas">
+      <div className="flex min-h-0 min-w-0 flex-col">
         <header className="flex h-16 shrink-0 items-center border-b border-line bg-surface px-6">
           <form onSubmit={search} className="relative w-full max-w-xl">
             <MagnifyingGlass size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-tertiary" />

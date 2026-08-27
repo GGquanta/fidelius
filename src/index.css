@@ -5,23 +5,45 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --canvas: #f3f2ef;
-  --ink: #1c1b19;
-  --muted: #6b6964;
-  --line: #e2e0db;
-  --pine: #2f4a3c;
-  --danger: #8f2d2a;
-  --surface: #faf9f7;
+  --canvas: #fafaf9;
+  --ink: #292524;
+  --muted: #78716c;
+  --line: #e7e5e4;
+  --accent: #0f766e;
+  --accent-soft: #f0fdfa;
+  --danger: #be123c;
+  --danger-soft: #fff1f2;
+  --surface: #ffffff;
+  --hover: #f5f5f4;
+  --cat-server: #0f766e;
+  --cat-server-soft: #ccfbf1;
+  --cat-ssl: #0369a1;
+  --cat-ssl-soft: #e0f2fe;
+  --cat-login: #b45309;
+  --cat-login-soft: #fef3c7;
+  --cat-generic: #6d28d9;
+  --cat-generic-soft: #ede9fe;
 }
 
 .dark {
-  --canvas: #121211;
-  --ink: #e8e4dc;
-  --muted: #9a9690;
-  --line: #2a2926;
-  --pine: #8fa898;
-  --danger: #d08a86;
-  --surface: #1c1b19;
+  --canvas: #1c1917;
+  --ink: #e7e5e4;
+  --muted: #a8a29e;
+  --line: #44403c;
+  --accent: #2dd4bf;
+  --accent-soft: #134e4a;
+  --danger: #fb7185;
+  --danger-soft: #4c0519;
+  --surface: #292524;
+  --hover: #44403c;
+  --cat-server: #5eead4;
+  --cat-server-soft: #134e4a;
+  --cat-ssl: #7dd3fc;
+  --cat-ssl-soft: #0c4a6e;
+  --cat-login: #fcd34d;
+  --cat-login-soft: #78350f;
+  --cat-generic: #c4b5fd;
+  --cat-generic-soft: #4c1d95;
 }
 
 @theme {
@@ -31,10 +53,14 @@
   --color-ink: var(--ink);
   --color-muted: var(--muted);
   --color-line: var(--line);
-  --color-pine: var(--pine);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
   --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
   --color-surface: var(--surface);
-  --radius-box: 6px;
+  --color-hover: var(--hover);
+  --radius-box: 8px;
+  --radius-tile: 10px;
 }
 
 html,
@@ -62,8 +88,28 @@ button {
   cursor: pointer;
 }
 
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 ::selection {
-  background: color-mix(in srgb, var(--pine) 22%, transparent);
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rise {
+  animation: rise 280ms ease;
 }
 
 @media (prefers-reduced-motion: reduce) {

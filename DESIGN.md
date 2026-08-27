@@ -98,65 +98,90 @@ interface VaultRecord {
 
 ## 界面
 
-Reading this as: 内部密钥账本，信任优先，档案气质。
+Reading this as: 小团队密钥工作台，清新、可扫读，带封缄仪式感。
 
-旋钮：方差 4、动效 3、密度 6。
+旋钮：方差 5、动效 4、密度 6。
 
 ### 令牌
 
-亮色（默认）：
+亮色（默认，Tailwind stone + teal）：
 
-- canvas `#F3F2EF`
-- ink `#1C1B19`
-- muted `#6B6964`
-- hairline `#E2E0DB`
-- pine `#2F4A3C`
-- danger `#8F2D2A`
-- surface `#FAF9F7`
+- canvas `stone-50` `#FAFAF9`
+- surface `#FFFFFF`
+- hover `stone-100` `#F5F5F4`
+- ink `stone-800` `#292524`
+- muted `stone-500` `#78716C`
+- line `stone-200` `#E7E5E4`
+- accent `teal-700` `#0F766E`
+- accent-soft `teal-50` `#F0FDFA`
+- danger `rose-700` `#BE123C`
+- danger-soft `rose-50` `#FFF1F2`
 
 暗色：
 
-- canvas `#121211`
-- ink `#E8E4DC`
-- muted `#9A9690`
-- hairline `#2A2926`
-- pine `#8FA898`
-- danger `#D08A86`
-- surface `#1C1B19`
+- canvas `stone-900` `#1C1917`
+- surface `stone-800` `#292524`
+- hover `stone-800`
+- ink `stone-200` `#E7E5E4`
+- muted `stone-400` `#A8A29E`
+- line `stone-700` `#44403C`
+- accent `teal-400` `#2DD4BF`
+- accent-soft `#134E4A`
+- danger `rose-400` `#FB7185`
+- danger-soft `#4C0519`
 
-圆角 6px。主按钮实心 ink。禁止：Inter、装饰衬线、蓝紫渐变、厚阴影、左侧色条、pill 大容器、emoji。
+分类色只用于 36px 图标瓷砖和微型标签：
+
+- 服务器 `teal` + HardDrives
+- SSL `sky` + Certificate
+- 登录 `amber` + Key
+- 通用 `violet` + Cube
+- 全部 `stone` + Vault
+
+圆角 8px（面板/行）与 10px（瓷砖）。主按钮实心 accent。禁止：Inter、装饰衬线、蓝紫大渐变、厚阴影、卡片左侧色条、pill 大容器、emoji、Lucide。允许图标侧栏与浅色瓷砖。
 
 字体：Geist（界面）、Geist Mono（秘密值、密钥、时间）。
 
-图标：Phosphor Light，stroke 一致。
+图标：Phosphor Regular，导航 16px，瓷砖 20px。
 
 ### 布局
 
 ```
-+--------------------------------------------------+
-| Fidelius          分类筛选     用户  开锁/封存   |
-+----------+---------------------------------------+
-| 全部     | 标题                    更新时间  标记 |
-| 服务器   | ------------------------------------- |
-| SSL      | ...                                   |
-| 登录     |                                       |
-| 通用     |                                       |
-+----------+---------------------------------------+
++------+-------------------------------------------+
+| 印  |  搜索                  用户  主题  开锁状态 |
+| 侧栏 |-------------------------------------------|
+| 图标 |  标题行 + 新建                             |
+| 分类 |  行：瓷砖  标题  标签  分享  时间           |
+| 计数 |                                           |
++------+-------------------------------------------+
 ```
 
-顶栏高度不超过 64px。左轨是文字筛选，不是图标侧栏。清单用发丝行，不用卡片堆。
+侧栏约 220px：圆角方印 + 字标，分类项带图标与数量，选中用 accent-soft，不用左侧色条。顶栏含搜索与开锁状态芯片。清单行高约 56px，hover 用 stone-100。
 
-详情是文档页：标题、描述、字段。敏感值默认等宽遮罩 `••••••••`。开锁后文字揭开（opacity + 轻微 blur 解除，200ms）。多行字段提供下载。
+详情双栏：左字段栈，右分享与日志。字段为浅表面块，hover 露出复制/下载。敏感值默认遮罩，开锁后揭开。
 
-用户管理仅 admin：席位 `n/10`，表格。
+编排页左说明右 QR 瓷砖，6 格验证码。空状态用大号图标构图 + 新建。用户席位为 10 格进度，行前姓名首字圆印。
+
+开锁为居中面板，6 个数字格，支持粘贴整串。
 
 文案用中文祈使动词：开锁、封存、复制、下载、分享、收回。禁止营销套话与破折号。
+
+### 组件
+
+- `SealMark` 印记
+- `AppShell` 侧栏 + 顶栏
+- `CategoryIcon` 分类瓷砖
+- `OtpBoxes` 六格验证码
+- `UnlockPanel` 开锁面板
+- `EmptyState` `RecordRow` `FieldBlock`
+
+装饰只三处：印记、空状态构图、编排页低透明度 teal 径向光斑。
 
 ### 状态
 
 骨架、空保险库、未开通、待编排、TOTP 错误、锁定、无权限、删除确认。
 
-复制成功用短提示，不弹模态。删除必须确认。
+复制成功用带勾的短提示。删除必须确认。
 
 ## 主题
 

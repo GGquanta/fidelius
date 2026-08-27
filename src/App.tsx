@@ -1,13 +1,16 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { AppShell } from "./components/AppShell";
 import { EnrollPage, GatePage } from "./pages/Gate";
 import { RecordDetailPage } from "./pages/RecordDetail";
 import { RecordFormPage } from "./pages/RecordForm";
 import { UsersPage } from "./pages/Users";
 import { VaultPage } from "./pages/Vault";
 import { SessionProvider, useSession } from "./session";
+import { ToastHost, useToast } from "./ui";
 
 function Shell() {
   const { code, user, error } = useSession();
+  const toast = useToast();
 
   if (code === "loading") {
     return (
@@ -30,23 +33,27 @@ function Shell() {
   }
 
   return (
-    <Routes>
-      <Route path="/" element={<VaultPage />} />
-      <Route path="/new" element={<RecordFormPage />} />
-      <Route path="/records/:id" element={<RecordDetailPage />} />
-      <Route path="/records/:id/edit" element={<RecordFormPage />} />
-      <Route path="/users" element={user?.role === "admin" ? <UsersPage /> : <Navigate to="/" />} />
-      <Route path="*" element={<Navigate to="/" />} />
-    </Routes>
+    <AppShell onToast={toast}>
+      <Routes>
+        <Route path="/" element={<VaultPage />} />
+        <Route path="/new" element={<RecordFormPage />} />
+        <Route path="/records/:id" element={<RecordDetailPage />} />
+        <Route path="/records/:id/edit" element={<RecordFormPage />} />
+        <Route path="/users" element={user?.role === "admin" ? <UsersPage /> : <Navigate to="/" />} />
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </AppShell>
   );
 }
 
 export function App() {
   return (
     <SessionProvider>
-      <BrowserRouter>
-        <Shell />
-      </BrowserRouter>
+      <ToastHost>
+        <BrowserRouter>
+          <Shell />
+        </BrowserRouter>
+      </ToastHost>
     </SessionProvider>
   );
 }

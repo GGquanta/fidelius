@@ -1,89 +1,65 @@
+import { Plus } from "@phosphor-icons/react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { api, type RecordMeta } from "../api";
-import { TopBar } from "../components/TopBar";
+import { EmptyState } from "../components/EmptyState";
+import { RecordRow } from "../components/RecordRow";
 import { errorMessage } from "../session";
-import { CATEGORIES, CATEGORY_LABEL, formatTime } from "../templates";
-import { Toast } from "../ui";
+import { CATEGORY_LABEL } from "../templates";
+import type { CategoryId } from "../components/CategoryIcon";
 
 export function VaultPage() {
-  const [params, setParams] = useSearchParams();
-  const category = params.get("category") ?? "all";
+  const [params] = useSearchParams();
+  const category = (params.get("category") as CategoryId | null) ?? "all";
+  const q = params.get("q") ?? "";
   const [records, setRecords] = useState<RecordMeta[] | null>(null);
-  const [toast, setToast] = useState("");
   const [err, setErr] = useState("");
 
   useEffect(() => {
     setRecords(null);
     void api
-      .records(category === "all" ? undefined : { category })
+      .records({
+        category: category === "all" ? undefined : category,
+        q: q || undefined,
+      })
       .then((result) => setRecords(result.records))
       .catch((error) => setErr(errorMessage(error)));
-  }, [category]);
+  }, [category, q]);
 
-  const empty = records && records.length === 0;
-
-  const title = useMemo(
-    () => (category === "all" ? "保险库" : CATEGORY_LABEL[category as keyof typeof CATEGORY_LABEL] ?? "保险库"),
-    [category],
-  );
+  const title = useMemo(() => {
+    if (q) return `搜索「${q}」`;
+    if (category === "all") return "保险库";
+    return CATEGORY_LABEL[category];
+  }, [category, q]);
 
   return (
-    <div className="relative min-h-[100dvh]">
-      <TopBar onToast={setToast} />
-      <div className="mx-auto grid max-w-6xl grid-cols-1 md:grid-cols-[160px_1fr]">
-        <aside className="border-b border-line px-6 py-6 md:border-b-0 md:border-r">
-          <nav className="flex flex-wrap gap-3 md:flex-col md:gap-2">
-            {CATEGORIES.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setParams(item.id === "all" ? {} : { category: item.id })}
-                className={`text-left text-sm ${category === item.id ? "text-ink" : "text-muted hover:text-ink"}`}
-              >
-                {item.label}
-              </button>
-            ))}
-          </nav>
-        </aside>
-        <section className="px-6 py-6">
-          <div className="flex items-baseline justify-between">
-            <h1 className="text-2xl tracking-[-0.04em]">{title}</h1>
-            <Link to="/new" className="bg-ink px-3 py-1.5 text-sm text-canvas">
-              新建
-            </Link>
-          </div>
-          {err ? <p className="mt-6 text-sm text-danger">{err}</p> : null}
-          {records === null && !err ? (
-            <div className="mt-8 space-y-3">
-              <div className="h-10 bg-surface" />
-              <div className="h-10 bg-surface" />
-              <div className="h-10 bg-surface" />
-            </div>
-          ) : null}
-          {empty ? (
-            <p className="mt-16 max-w-[36ch] text-muted">还没有记录。从一份服务器、证书或登录口令开始。</p>
-          ) : null}
-          <ul className="mt-8">
-            {records?.map((record) => (
-              <li key={record.id} className="border-t border-line">
-                <Link to={`/records/${record.id}`} className="flex items-baseline justify-between gap-4 py-4">
-                  <div>
-                    <p className="text-ink">{record.title}</p>
-                    <p className="mt-1 text-sm text-muted">
-                      {CATEGORY_LABEL[record.category]}
-                      {record.access === "shared" ? " / 分享给我" : ""}
-                      {record.sharedWith.length > 0 && record.access === "owner" ? " / 已分享" : ""}
-                    </p>
-                  </div>
-                  <time className="font-mono text-xs text-muted">{formatTime(record.updatedAt)}</time>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
+    <section className="px-5 py-6">
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl tracking-[-0.04em]">{title}</h1>
+        <Link
+          to="/new"
+          className="inline-flex items-center gap-1.5 rounded-box bg-accent px-3 py-2 text-sm text-white dark:text-stone-900"
+        >
+          <Plus size={16} />
+          新建
+        </Link>
       </div>
-      {toast ? <Toast text={toast} onDone={() => setToast("")} /> : null}
-    </div>
+      {err ? <p className="mt-6 text-sm text-danger">{err}</p> : null}
+      {records === null && !err ? (
+        <div className="mt-6 space-y-2">
+          <div className="h-14 rounded-box bg-hover" />
+          <div className="h-14 rounded-box bg-hover" />
+          <div className="h-14 rounded-box bg-hover" />
+        </div>
+      ) : null}
+      {records && records.length === 0 ? <EmptyState category={category} /> : null}
+      <ul className="mt-4">
+        {records?.map((record) => (
+          <li key={record.id}>
+            <RecordRow record={record} />
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

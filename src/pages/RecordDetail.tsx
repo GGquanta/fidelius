@@ -1,22 +1,23 @@
-import { DownloadSimple } from "@phosphor-icons/react";
+import { PencilSimple, Trash } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, type AuditEntry, type RecordMeta, type RevealedRecord } from "../api";
-import { TopBar } from "../components/TopBar";
+import { CategoryIcon } from "../components/CategoryIcon";
+import { FieldBlock } from "../components/FieldBlock";
 import { errorMessage, useSession } from "../session";
 import { CATEGORY_LABEL, formatTime } from "../templates";
-import { Toast } from "../ui";
+import { useToast } from "../ui";
 
 export function RecordDetailPage() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
+  const toast = useToast();
   const { unlocked, user } = useSession();
   const [record, setRecord] = useState<RecordMeta | null>(null);
   const [revealed, setRevealed] = useState<RevealedRecord | null>(null);
   const [audit, setAudit] = useState<AuditEntry[]>([]);
   const [people, setPeople] = useState<Array<{ id: string; displayName: string; email: string }>>([]);
   const [err, setErr] = useState("");
-  const [toast, setToast] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [shareId, setShareId] = useState("");
 
@@ -56,11 +57,6 @@ export function RecordDetailPage() {
       .catch((error) => setErr(errorMessage(error)));
   }, [unlocked, id]);
 
-  async function copy(value: string) {
-    await navigator.clipboard.writeText(value);
-    setToast("已复制");
-  }
-
   function download(label: string, value: string) {
     const blob = new Blob([value], { type: "text/plain;charset=utf-8" });
     const href = URL.createObjectURL(blob);
@@ -72,73 +68,59 @@ export function RecordDetailPage() {
   }
 
   if (err && !record) {
-    return (
-      <div>
-        <TopBar onToast={setToast} />
-        <p className="px-6 py-10 text-danger">{err}</p>
-      </div>
-    );
+    return <p className="px-6 py-10 text-danger">{err}</p>;
   }
 
+  const fields = revealed?.fields ?? record?.fieldMeta.map((f) => ({ ...f, value: "" })) ?? [];
+
   return (
-    <div className="relative min-h-[100dvh]">
-      <TopBar onToast={setToast} />
-      <article className="mx-auto max-w-2xl px-6 py-10">
-        <p className="text-sm text-muted">
-          {record ? CATEGORY_LABEL[record.category] : ""}
-          {record?.access === "shared" ? " / 只读分享" : ""}
-        </p>
-        <h1 className="mt-2 text-3xl tracking-[-0.05em]">{record?.title ?? "…"}</h1>
-        {record?.description ? <p className="mt-4 max-w-[60ch] text-muted">{record.description}</p> : null}
-        <p className="mt-3 font-mono text-xs text-muted">
-          创建 {record ? formatTime(record.createdAt) : ""} / 修改 {record ? formatTime(record.updatedAt) : ""}
-        </p>
-        <div className="mt-10 divide-y divide-line border-y border-line">
-          {(revealed?.fields ?? record?.fieldMeta.map((f) => ({ ...f, value: "" })) ?? []).map((field) => {
-            const sealed = !revealed;
-            const long = field.type === "multiline";
-            return (
-              <div key={field.key} className="py-5">
-                <div className="flex items-baseline justify-between gap-4">
-                  <h2 className="text-sm text-muted">{field.label}</h2>
-                  {revealed ? (
-                    <div className="flex gap-3 text-sm">
-                      <button type="button" onClick={() => void copy(field.value)} className="hover:text-pine">
-                        复制
-                      </button>
-                      {long ? (
-                        <button
-                          type="button"
-                          onClick={() => download(field.label, field.value)}
-                          className="inline-flex items-center gap-1 hover:text-pine"
-                        >
-                          <DownloadSimple size={14} />
-                          下载
-                        </button>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
-                <pre
-                  className={`mt-3 overflow-x-auto whitespace-pre-wrap break-all font-mono text-sm transition duration-200 ${
-                    sealed ? "blur-[3px] select-none text-muted" : "blur-0 text-ink"
-                  }`}
-                >
-                  {sealed ? "••••••••••••••••" : field.value || "（空）"}
-                </pre>
-              </div>
-            );
-          })}
+    <article className="grid gap-8 px-5 py-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+      <div>
+        <div className="flex items-start gap-3">
+          {record ? <CategoryIcon category={record.category} size={44} /> : null}
+          <div>
+            <p className="text-sm text-muted">
+              {record ? CATEGORY_LABEL[record.category] : ""}
+              {record?.access === "shared" ? " · 只读分享" : ""}
+            </p>
+            <h1 className="mt-1 text-2xl tracking-[-0.04em]">{record?.title ?? "…"}</h1>
+            {record?.description ? <p className="mt-2 text-muted">{record.description}</p> : null}
+          </div>
+        </div>
+        <div className="mt-8 space-y-3">
+          {fields.map((field) => (
+            <FieldBlock
+              key={field.key}
+              field={field}
+              sealed={!revealed}
+              onCopy={(value) => {
+                void navigator.clipboard.writeText(value);
+                toast("已复制");
+              }}
+              onDownload={download}
+            />
+          ))}
         </div>
         {!unlocked ? <p className="mt-4 text-sm text-muted">开锁后显示敏感内容。</p> : null}
+        {err ? <p className="mt-4 text-sm text-danger">{err}</p> : null}
+      </div>
+      <aside className="space-y-6">
+        <section className="rounded-box border border-line bg-surface p-4">
+          <p className="text-sm text-muted">时间</p>
+          <p className="mt-2 font-mono text-xs">
+            创建 {record ? formatTime(record.createdAt) : ""}
+            <br />
+            修改 {record ? formatTime(record.updatedAt) : ""}
+          </p>
+        </section>
         {record?.access === "owner" ? (
-          <section className="mt-12">
-            <h2 className="text-sm text-muted">分享</h2>
+          <section className="rounded-box border border-line bg-surface p-4">
+            <p className="text-sm text-muted">分享</p>
             <div className="mt-3 flex gap-2">
               <select
                 value={shareId}
                 onChange={(e) => setShareId(e.target.value)}
-                className="flex-1 border-b border-line bg-transparent py-2 outline-none"
+                className="flex-1 rounded-box border border-line bg-canvas px-2 py-2 text-sm outline-none"
               >
                 <option value="">选择同事</option>
                 {people
@@ -151,7 +133,7 @@ export function RecordDetailPage() {
               </select>
               <button
                 type="button"
-                className="text-sm"
+                className="rounded-box bg-accent px-3 py-2 text-sm text-white dark:text-stone-900"
                 onClick={() => {
                   if (!shareId) return;
                   void api
@@ -164,7 +146,7 @@ export function RecordDetailPage() {
                 分享
               </button>
             </div>
-            <ul className="mt-4 space-y-2">
+            <ul className="mt-3 space-y-2">
               {record.sharedWith.map((uid) => {
                 const person = people.find((p) => p.id === uid);
                 return (
@@ -181,31 +163,39 @@ export function RecordDetailPage() {
                 );
               })}
             </ul>
-            <div className="mt-8 flex gap-4 text-sm">
-              <Link to={`/records/${id}/edit`} className="hover:text-pine">
+            <div className="mt-4 flex gap-2">
+              <Link
+                to={`/records/${id}/edit`}
+                className="inline-flex items-center gap-1 rounded-box px-2 py-1.5 text-sm hover:bg-hover"
+              >
+                <PencilSimple size={14} />
                 编辑
               </Link>
-              <button type="button" className="text-danger" onClick={() => setConfirmDelete(true)}>
+              <button
+                type="button"
+                className="inline-flex items-center gap-1 rounded-box px-2 py-1.5 text-sm text-danger hover:bg-danger-soft"
+                onClick={() => setConfirmDelete(true)}
+              >
+                <Trash size={14} />
                 删除
               </button>
             </div>
           </section>
         ) : null}
-        <section className="mt-12">
-          <h2 className="text-sm text-muted">修改日志</h2>
-          <ul className="mt-4 space-y-2">
+        <section className="rounded-box border border-line bg-surface p-4">
+          <p className="text-sm text-muted">修改日志</p>
+          <ul className="mt-3 space-y-2">
             {audit.map((entry, index) => (
               <li key={`${entry.at}-${index}`} className="font-mono text-xs text-muted">
-                {formatTime(entry.at)} {entry.actorEmail} {entry.action} {entry.detail}
+                {formatTime(entry.at)} {entry.actorEmail} {entry.action}
               </li>
             ))}
           </ul>
         </section>
-        {err ? <p className="mt-6 text-sm text-danger">{err}</p> : null}
-      </article>
+      </aside>
       {confirmDelete ? (
-        <div className="fixed inset-0 z-20 grid place-items-center bg-ink/30">
-          <div className="w-[min(90vw,360px)] bg-canvas p-6">
+        <div className="fixed inset-0 z-20 grid place-items-center bg-ink/25 p-4">
+          <div className="w-[min(90vw,360px)] rounded-box border border-line bg-surface p-6">
             <p>删除后无法恢复。确定删除这条记录？</p>
             <div className="mt-6 flex justify-end gap-3 text-sm">
               <button type="button" onClick={() => setConfirmDelete(false)}>
@@ -213,7 +203,7 @@ export function RecordDetailPage() {
               </button>
               <button
                 type="button"
-                className="text-danger"
+                className="rounded-box bg-danger px-3 py-1.5 text-white"
                 onClick={() => {
                   void api.deleteRecord(id).then(() => navigate("/"));
                 }}
@@ -224,7 +214,6 @@ export function RecordDetailPage() {
           </div>
         </div>
       ) : null}
-      {toast ? <Toast text={toast} onDone={() => setToast("")} /> : null}
-    </div>
+    </article>
   );
 }

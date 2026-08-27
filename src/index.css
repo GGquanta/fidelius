@@ -1,0 +1,76 @@
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --canvas: #f3f2ef;
+  --ink: #1c1b19;
+  --muted: #6b6964;
+  --line: #e2e0db;
+  --pine: #2f4a3c;
+  --danger: #8f2d2a;
+  --surface: #faf9f7;
+}
+
+.dark {
+  --canvas: #121211;
+  --ink: #e8e4dc;
+  --muted: #9a9690;
+  --line: #2a2926;
+  --pine: #8fa898;
+  --danger: #d08a86;
+  --surface: #1c1b19;
+}
+
+@theme {
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, monospace;
+  --color-canvas: var(--canvas);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-pine: var(--pine);
+  --color-danger: var(--danger);
+  --color-surface: var(--surface);
+  --radius-box: 6px;
+}
+
+html,
+body,
+#root {
+  min-height: 100dvh;
+  background: var(--canvas);
+  color: var(--ink);
+}
+
+body {
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01" 1;
+  letter-spacing: -0.011em;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--pine) 22%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

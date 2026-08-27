@@ -1,0 +1,2 @@
+MASTER_KEY=replace-with-openssl-rand-base64-32
+BOOTSTRAP_ADMIN_EMAIL=admin@example.com

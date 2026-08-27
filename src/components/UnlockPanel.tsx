@@ -1,6 +1,7 @@
 import { LockSimple, LockSimpleOpen } from "@phosphor-icons/react";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { errorMessage, useSession } from "../session";
+import { Button } from "./Button";
 import { OtpBoxes } from "./OtpBoxes";
 
 export function UnlockPanel({
@@ -61,7 +62,7 @@ export function UnlockPanel({
       <form
         onSubmit={(event) => void submit(event)}
         onClick={(event) => event.stopPropagation()}
-        className="rise w-[min(92vw,380px)] rounded-box border border-line bg-surface p-6"
+        className="rise w-[min(92vw,380px)] rounded-xl border border-line bg-surface p-6 shadow-elev-5"
       >
         <div className="flex items-center gap-3">
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-tile bg-accent-soft text-accent">
@@ -77,16 +78,12 @@ export function UnlockPanel({
         </div>
         {err ? <p className="mt-3 text-sm text-danger">{err}</p> : null}
         <div className="mt-6 flex justify-end gap-3">
-          <button type="button" className="px-3 py-2 text-sm text-muted" onClick={onClose}>
+          <Button type="button" tone="tertiary" onClick={onClose}>
             取消
-          </button>
-          <button
-            type="submit"
-            disabled={busy || done || code.length !== 6}
-            className="rounded-box bg-accent px-4 py-2 text-sm text-white disabled:opacity-40 dark:text-stone-900"
-          >
+          </Button>
+          <Button type="submit" disabled={busy || done || code.length !== 6}>
             开锁
-          </button>
+          </Button>
         </div>
       </form>
     </div>

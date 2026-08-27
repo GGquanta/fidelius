@@ -178,7 +178,7 @@ async function readLockout(env: Env, userId: string): Promise<Lockout> {
   return (await getJson<Lockout>(env.FIDELIUS, keys.lockout(userId))) ?? { fails: 0 };
 }
 
-export async function unlock(env: Env, user: User, code: string): Promise<string> {
+export async function unlock(env: Env, user: User, code: string): Promise<{ token: string; exp: number }> {
   if (user.status !== "active") throw new ApiError(403, "pending_enroll", "请先完成编排");
   const lockout = await readLockout(env, user.id);
   if (lockout.until && lockout.until > Date.now()) {
@@ -209,18 +209,27 @@ export async function unlock(env: Env, user: User, code: string): Promise<string
   await putJson(env.FIDELIUS, keys.unlock(user.id), session, {
     expirationTtl: UNLOCK_TTL_SECONDS,
   });
-  return token;
+  return session;
 }
 
 export async function lock(env: Env, userId: string): Promise<void> {
   await env.FIDELIUS.delete(keys.unlock(userId));
 }
 
-export async function isUnlocked(env: Env, userId: string, token: string | undefined): Promise<boolean> {
-  if (!token) return false;
+export async function getUnlockExpiresAt(
+  env: Env,
+  userId: string,
+  token: string | undefined,
+): Promise<number | null> {
+  if (!token) return null;
   const session = await getJson<UnlockSession>(env.FIDELIUS, keys.unlock(userId));
-  if (!session || session.exp < Date.now()) return false;
-  return timingSafeEqual(session.token, token);
+  if (!session || session.exp < Date.now()) return null;
+  if (!timingSafeEqual(session.token, token)) return null;
+  return session.exp;
+}
+
+export async function isUnlocked(env: Env, userId: string, token: string | undefined): Promise<boolean> {
+  return (await getUnlockExpiresAt(env, userId, token)) !== null;
 }
 
 export function parseUnlockCookie(cookieHeader: string | undefined, userId: string): string | undefined {

@@ -2,6 +2,7 @@ import { PencilSimple, Trash } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, type AuditEntry, type RecordMeta, type RevealedRecord } from "../api";
+import { Button } from "../components/Button";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { FieldBlock } from "../components/FieldBlock";
 import { errorMessage, useSession } from "../session";
@@ -83,8 +84,8 @@ export function RecordDetailPage() {
               {record ? CATEGORY_LABEL[record.category] : ""}
               {record?.access === "shared" ? " · 只读分享" : ""}
             </p>
-            <h1 className="mt-1 text-2xl tracking-[-0.04em]">{record?.title ?? "…"}</h1>
-            {record?.description ? <p className="mt-2 text-muted">{record.description}</p> : null}
+            <h1 className="font-display mt-1 text-3xl tracking-tight">{record?.title ?? "…"}</h1>
+            {record?.description ? <p className="mt-2 max-w-[34em] text-muted">{record.description}</p> : null}
           </div>
         </div>
         <div className="mt-8 space-y-3">
@@ -105,22 +106,22 @@ export function RecordDetailPage() {
         {err ? <p className="mt-4 text-sm text-danger">{err}</p> : null}
       </div>
       <aside className="space-y-6">
-        <section className="rounded-box border border-line bg-surface p-4">
+        <section className="rounded-lg border border-line bg-surface p-4 shadow-elev-1">
           <p className="text-sm text-muted">时间</p>
-          <p className="mt-2 font-mono text-xs">
+          <p className="mt-2 font-mono text-xs text-tertiary">
             创建 {record ? formatTime(record.createdAt) : ""}
             <br />
             修改 {record ? formatTime(record.updatedAt) : ""}
           </p>
         </section>
         {record?.access === "owner" ? (
-          <section className="rounded-box border border-line bg-surface p-4">
+          <section className="rounded-lg border border-line bg-surface p-4 shadow-elev-1">
             <p className="text-sm text-muted">分享</p>
             <div className="mt-3 flex gap-2">
               <select
                 value={shareId}
                 onChange={(e) => setShareId(e.target.value)}
-                className="flex-1 rounded-box border border-line bg-canvas px-2 py-2 text-sm outline-none"
+                className="flex-1 rounded-box border border-line-strong bg-canvas px-2 py-2 text-sm outline-none"
               >
                 <option value="">选择同事</option>
                 {people
@@ -131,9 +132,8 @@ export function RecordDetailPage() {
                     </option>
                   ))}
               </select>
-              <button
+              <Button
                 type="button"
-                className="rounded-box bg-accent px-3 py-2 text-sm text-white dark:text-stone-900"
                 onClick={() => {
                   if (!shareId) return;
                   void api
@@ -144,7 +144,7 @@ export function RecordDetailPage() {
                 }}
               >
                 分享
-              </button>
+              </Button>
             </div>
             <ul className="mt-3 space-y-2">
               {record.sharedWith.map((uid) => {
@@ -173,7 +173,7 @@ export function RecordDetailPage() {
               </Link>
               <button
                 type="button"
-                className="inline-flex items-center gap-1 rounded-box px-2 py-1.5 text-sm text-danger hover:bg-danger-soft"
+                className="inline-flex items-center gap-1 rounded-box px-2 py-1.5 text-sm text-muted hover:bg-hover hover:text-danger"
                 onClick={() => setConfirmDelete(true)}
               >
                 <Trash size={14} />
@@ -182,11 +182,11 @@ export function RecordDetailPage() {
             </div>
           </section>
         ) : null}
-        <section className="rounded-box border border-line bg-surface p-4">
+        <section className="rounded-lg border border-line bg-surface p-4 shadow-elev-1">
           <p className="text-sm text-muted">修改日志</p>
           <ul className="mt-3 space-y-2">
             {audit.map((entry, index) => (
-              <li key={`${entry.at}-${index}`} className="font-mono text-xs text-muted">
+              <li key={`${entry.at}-${index}`} className="font-mono text-xs text-tertiary">
                 {formatTime(entry.at)} {entry.actorEmail} {entry.action}
               </li>
             ))}
@@ -195,21 +195,21 @@ export function RecordDetailPage() {
       </aside>
       {confirmDelete ? (
         <div className="fixed inset-0 z-20 grid place-items-center bg-ink/25 p-4">
-          <div className="w-[min(90vw,360px)] rounded-box border border-line bg-surface p-6">
+          <div className="w-[min(90vw,360px)] rounded-xl border border-line bg-surface p-6 shadow-elev-5">
             <p>删除后无法恢复。确定删除这条记录？</p>
-            <div className="mt-6 flex justify-end gap-3 text-sm">
-              <button type="button" onClick={() => setConfirmDelete(false)}>
+            <div className="mt-6 flex justify-end gap-3">
+              <Button type="button" tone="tertiary" onClick={() => setConfirmDelete(false)}>
                 取消
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="rounded-box bg-danger px-3 py-1.5 text-white"
+                tone="danger"
                 onClick={() => {
-                  void api.deleteRecord(id).then(() => navigate("/"));
+                  void api.deleteRecord(id).then(() => navigate("/vault"));
                 }}
               >
                 删除
-              </button>
+              </Button>
             </div>
           </div>
         </div>

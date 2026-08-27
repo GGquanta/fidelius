@@ -23,7 +23,7 @@ export function FieldBlock({
   }
 
   return (
-    <div className="group rounded-box border border-line bg-surface p-4">
+    <div className="group rounded-lg border border-line bg-surface p-4 shadow-elev-1">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-sm text-muted">{field.label}</h2>
         {sealed ? null : (

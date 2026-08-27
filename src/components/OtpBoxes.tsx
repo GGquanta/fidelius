@@ -51,7 +51,7 @@ export function OtpBoxes({
             onChange(pasted);
             refs.current[Math.min(pasted.length, 5)]?.focus();
           }}
-          className="h-12 min-w-0 flex-1 rounded-box border border-line bg-surface text-center font-mono text-lg outline-none focus:border-accent"
+          className="h-12 min-w-0 flex-1 rounded-box border border-line-strong bg-surface text-center font-mono text-lg outline-none focus:border-accent"
         />
       ))}
     </div>

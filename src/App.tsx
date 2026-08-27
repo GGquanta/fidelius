@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./components/AppShell";
+import { DashboardPage } from "./pages/Dashboard";
 import { EnrollPage, GatePage } from "./pages/Gate";
 import { RecordDetailPage } from "./pages/RecordDetail";
 import { RecordFormPage } from "./pages/RecordForm";
@@ -13,11 +14,7 @@ function Shell() {
   const toast = useToast();
 
   if (code === "loading") {
-    return (
-      <main className="grid min-h-[100dvh] place-items-center text-muted">
-        载入中
-      </main>
-    );
+    return <main className="grid min-h-[100dvh] place-items-center text-muted">载入中</main>;
   }
   if (error) {
     return <GatePage title="无法连接" body={error} />;
@@ -35,7 +32,8 @@ function Shell() {
   return (
     <AppShell onToast={toast}>
       <Routes>
-        <Route path="/" element={<VaultPage />} />
+        <Route path="/" element={<DashboardPage />} />
+        <Route path="/vault" element={<VaultPage />} />
         <Route path="/new" element={<RecordFormPage />} />
         <Route path="/records/:id" element={<RecordDetailPage />} />
         <Route path="/records/:id/edit" element={<RecordFormPage />} />

@@ -1,66 +1,237 @@
 @import "@fontsource-variable/geist";
 @import "@fontsource-variable/geist-mono";
+@import "@fontsource-variable/outfit";
 @import "tailwindcss";
+
+/* Fidelius tokens: warm paper, violet ink */
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --canvas: #fafaf9;
-  --ink: #292524;
-  --muted: #78716c;
-  --line: #e7e5e4;
-  --accent: #0f766e;
-  --accent-soft: #f0fdfa;
-  --danger: #be123c;
-  --danger-soft: #fff1f2;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 30px;
+  --text-4xl: 36px;
+  --text-5xl: 48px;
+  --text-6xl: 60px;
+
+  --weight-normal: 400;
+  --weight-bold: 600;
+
+  --grey-100: hsl(40, 30%, 98%);
+  --grey-200: hsl(36, 24%, 93%);
+  --grey-300: hsl(32, 20%, 86%);
+  --grey-400: hsl(28, 16%, 62%); /* disabled only, ~2.7:1 */
+  --grey-500: hsl(28, 14%, 50%); /* functional border 3.7:1; large text only */
+  --grey-600: hsl(26, 16%, 40%); /* tertiary 5.4:1 */
+  --grey-700: hsl(24, 18%, 32%); /* secondary 7.5:1 */
+  --grey-800: hsl(24, 20%, 20%);
+  --grey-900: hsl(24, 20%, 13%); /* primary 15.4:1 */
+
+  --violet-100: hsl(280, 85%, 96%);
+  --violet-200: hsl(276, 80%, 90%);
+  --violet-300: hsl(272, 72%, 80%);
+  --violet-400: hsl(270, 68%, 68%);
+  --violet-500: hsl(268, 70%, 58%); /* white text 5.0:1 */
+  --violet-600: hsl(264, 68%, 48%);
+  --violet-700: hsl(260, 70%, 38%);
+  --violet-800: hsl(258, 72%, 30%);
+  --violet-900: hsl(256, 74%, 25%); /* text on violet-100 13:1 */
+
+  --peach-100: hsl(16, 90%, 95%);
+  --peach-300: hsl(16, 88%, 78%);
+  --peach-500: hsl(16, 88%, 64%); /* highlight only, not white-on-peach */
+  --peach-700: hsl(14, 80%, 42%);
+  --peach-800: hsl(12, 78%, 32%); /* text on peach-100 7.2:1 */
+
+  --red-100: hsl(360, 100%, 96%);
+  --red-500: hsl(360, 72%, 42%);
+  --red-800: hsl(360, 80%, 28%);
+
+  --elev-1: 0 1px 2px hsla(24, 20%, 13%, 0.06), 0 1px 3px hsla(24, 20%, 13%, 0.1);
+  --elev-2: 0 3px 6px hsla(24, 20%, 13%, 0.06), 0 2px 4px hsla(24, 20%, 13%, 0.08);
+  --elev-3: 0 3px 6px hsla(24, 20%, 13%, 0.05), 0 10px 20px hsla(24, 20%, 13%, 0.1);
+  --elev-4: 0 5px 10px hsla(24, 20%, 13%, 0.05), 0 16px 28px hsla(24, 20%, 13%, 0.12);
+  --elev-5: 0 24px 48px hsla(24, 20%, 13%, 0.18);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 26px;
+
+  --opacity-1: 0.05;
+  --opacity-2: 0.1;
+  --opacity-3: 0.2;
+  --opacity-4: 0.4;
+  --opacity-5: 0.6;
+  --opacity-6: 0.8;
+
+  --canvas: var(--grey-100);
   --surface: #ffffff;
-  --hover: #f5f5f4;
-  --cat-server: #0f766e;
-  --cat-server-soft: #ccfbf1;
-  --cat-ssl: #0369a1;
-  --cat-ssl-soft: #e0f2fe;
-  --cat-login: #b45309;
-  --cat-login-soft: #fef3c7;
-  --cat-generic: #6d28d9;
-  --cat-generic-soft: #ede9fe;
+  --hover: hsl(36, 24%, 94%);
+  --sunken: var(--grey-200);
+  --ink: var(--grey-900);
+  --muted: var(--grey-700);
+  --tertiary: var(--grey-600);
+  --line: var(--grey-300); /* decorative divider ~1.3:1 */
+  --line-strong: var(--grey-500); /* functional control edge ≥3:1 */
+  --accent: var(--violet-500);
+  --accent-deep: var(--violet-600);
+  --accent-soft: var(--violet-100);
+  --accent-ink: var(--violet-900);
+  --peach: var(--peach-500);
+  --peach-soft: var(--peach-100);
+  --peach-ink: var(--peach-800);
+  --danger: var(--red-500);
+  --danger-soft: var(--red-100);
+  --danger-ink: var(--red-800);
+  --action-text: #ffffff;
+
+  --cat-server: hsl(268, 70%, 46%);
+  --cat-server-soft: hsl(280, 85%, 96%);
+  --cat-server-ink: hsl(256, 74%, 25%);
+  --cat-database: hsl(158, 70%, 32%);
+  --cat-database-soft: hsl(158, 60%, 92%);
+  --cat-database-ink: hsl(158, 80%, 18%);
+  --cat-ssl: hsl(205, 78%, 38%);
+  --cat-ssl-soft: hsl(205, 85%, 94%);
+  --cat-ssl-ink: hsl(205, 90%, 22%);
+  --cat-apikey: hsl(42, 92%, 38%);
+  --cat-apikey-soft: hsl(42, 95%, 92%);
+  --cat-apikey-ink: hsl(28, 90%, 24%);
+  --cat-login: hsl(338, 72%, 46%);
+  --cat-login-soft: hsl(338, 90%, 95%);
+  --cat-login-ink: hsl(338, 80%, 28%);
+  --cat-cloud: hsl(232, 72%, 48%);
+  --cat-cloud-soft: hsl(232, 85%, 94%);
+  --cat-cloud-ink: hsl(232, 80%, 28%);
+  --cat-domain: hsl(90, 55%, 32%);
+  --cat-domain-soft: hsl(90, 70%, 92%);
+  --cat-domain-ink: hsl(90, 70%, 22%);
+  --cat-network: hsl(182, 70%, 32%);
+  --cat-network-soft: hsl(182, 70%, 92%);
+  --cat-network-ink: hsl(182, 80%, 20%);
+  --cat-recovery: hsl(12, 80%, 46%);
+  --cat-recovery-soft: hsl(12, 90%, 95%);
+  --cat-recovery-ink: hsl(12, 80%, 28%);
+  --cat-generic: hsl(32, 18%, 42%);
+  --cat-generic-soft: hsl(32, 20%, 94%);
+  --cat-generic-ink: hsl(24, 20%, 22%);
+  --cat-all: var(--ink);
+  --cat-all-soft: var(--hover);
+  --cat-all-ink: var(--ink);
 }
 
 .dark {
-  --canvas: #1c1917;
-  --ink: #e7e5e4;
-  --muted: #a8a29e;
-  --line: #44403c;
-  --accent: #2dd4bf;
-  --accent-soft: #134e4a;
-  --danger: #fb7185;
-  --danger-soft: #4c0519;
-  --surface: #292524;
-  --hover: #44403c;
-  --cat-server: #5eead4;
-  --cat-server-soft: #134e4a;
-  --cat-ssl: #7dd3fc;
-  --cat-ssl-soft: #0c4a6e;
-  --cat-login: #fcd34d;
-  --cat-login-soft: #78350f;
-  --cat-generic: #c4b5fd;
-  --cat-generic-soft: #4c1d95;
+  --canvas: hsl(24, 22%, 10%);
+  --surface: hsl(24, 20%, 16%);
+  --hover: hsl(24, 18%, 20%);
+  --sunken: hsl(24, 22%, 8%);
+  --ink: hsl(36, 24%, 92%); /* 14:1 on canvas; grey-100 too harsh */
+  --muted: hsl(36, 18%, 78%);
+  --tertiary: hsl(32, 14%, 68%); /* 6.7:1 on raised surface */
+  --line: hsl(24, 16%, 24%); /* decorative */
+  --line-strong: hsl(36, 16%, 62%); /* functional, lighter in dark */
+  --accent: hsl(270, 64%, 72%);
+  --accent-deep: hsl(268, 60%, 62%);
+  --accent-soft: hsl(256, 36%, 18%);
+  --accent-ink: hsl(270, 70%, 88%);
+  --peach: hsl(16, 80%, 68%);
+  --peach-soft: hsl(12, 40%, 16%);
+  --peach-ink: hsl(16, 90%, 82%);
+  --danger: hsl(360, 78%, 72%);
+  --danger-soft: hsl(360, 40%, 16%);
+  --danger-ink: hsl(360, 90%, 86%);
+  --action-text: var(--grey-900);
+
+  --elev-1: 0 1px 2px hsla(0, 0%, 0%, 0.35);
+  --elev-2: 0 3px 6px hsla(0, 0%, 0%, 0.35);
+  --elev-3: 0 8px 18px hsla(0, 0%, 0%, 0.4);
+  --elev-4: 0 14px 28px hsla(0, 0%, 0%, 0.45);
+  --elev-5: 0 24px 48px hsla(0, 0%, 0%, 0.55);
+
+  --cat-server: hsl(270, 70%, 78%);
+  --cat-server-soft: hsl(256, 36%, 18%);
+  --cat-server-ink: hsl(270, 70%, 86%);
+  --cat-database: hsl(158, 55%, 62%);
+  --cat-database-soft: hsl(158, 30%, 16%);
+  --cat-database-ink: hsl(158, 55%, 78%);
+  --cat-ssl: hsl(205, 70%, 72%);
+  --cat-ssl-soft: hsl(205, 40%, 16%);
+  --cat-ssl-ink: hsl(205, 80%, 84%);
+  --cat-apikey: hsl(42, 80%, 68%);
+  --cat-apikey-soft: hsl(32, 40%, 16%);
+  --cat-apikey-ink: hsl(42, 90%, 82%);
+  --cat-login: hsl(338, 70%, 76%);
+  --cat-login-soft: hsl(338, 36%, 16%);
+  --cat-login-ink: hsl(338, 80%, 86%);
+  --cat-cloud: hsl(232, 70%, 76%);
+  --cat-cloud-soft: hsl(232, 36%, 18%);
+  --cat-cloud-ink: hsl(232, 80%, 86%);
+  --cat-domain: hsl(90, 50%, 64%);
+  --cat-domain-soft: hsl(90, 24%, 14%);
+  --cat-domain-ink: hsl(90, 55%, 80%);
+  --cat-network: hsl(182, 55%, 64%);
+  --cat-network-soft: hsl(182, 30%, 14%);
+  --cat-network-ink: hsl(182, 60%, 80%);
+  --cat-recovery: hsl(12, 80%, 72%);
+  --cat-recovery-soft: hsl(12, 36%, 16%);
+  --cat-recovery-ink: hsl(12, 90%, 84%);
+  --cat-generic: hsl(32, 16%, 72%);
+  --cat-generic-soft: hsl(24, 16%, 16%);
+  --cat-generic-ink: hsl(36, 20%, 86%);
+  --cat-all: var(--ink);
+  --cat-all-soft: var(--hover);
+  --cat-all-ink: var(--ink);
 }
 
 @theme {
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit Variable", "Geist Variable", ui-sans-serif, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, monospace;
   --color-canvas: var(--canvas);
-  --color-ink: var(--ink);
-  --color-muted: var(--muted);
-  --color-line: var(--line);
-  --color-accent: var(--accent);
-  --color-accent-soft: var(--accent-soft);
-  --color-danger: var(--danger);
-  --color-danger-soft: var(--danger-soft);
   --color-surface: var(--surface);
   --color-hover: var(--hover);
-  --radius-box: 8px;
-  --radius-tile: 10px;
+  --color-sunken: var(--sunken);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-tertiary: var(--tertiary);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-deep: var(--accent-deep);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-ink: var(--accent-ink);
+  --color-peach: var(--peach);
+  --color-peach-soft: var(--peach-soft);
+  --color-peach-ink: var(--peach-ink);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-ink: var(--danger-ink);
+  --color-action-text: var(--action-text);
+  --radius-sm: 8px;
+  --radius-box: 12px;
+  --radius-tile: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 26px;
+  --shadow-elev-1: var(--elev-1);
+  --shadow-elev-2: var(--elev-2);
+  --shadow-elev-3: var(--elev-3);
+  --shadow-elev-4: var(--elev-4);
+  --shadow-elev-5: var(--elev-5);
 }
 
 html,
@@ -95,6 +266,155 @@ button {
 
 ::selection {
   background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.mesh-glow {
+  background:
+    radial-gradient(ellipse 80% 50% at 8% -8%, hsla(268, 70%, 58%, 0.08), transparent 52%),
+    radial-gradient(ellipse 55% 40% at 92% 0%, hsla(16, 88%, 64%, 0.06), transparent 46%);
+}
+
+.dark .mesh-glow {
+  background:
+    radial-gradient(ellipse 80% 50% at 8% -8%, hsla(270, 64%, 72%, 0.1), transparent 52%),
+    radial-gradient(ellipse 55% 40% at 92% 0%, hsla(16, 80%, 60%, 0.07), transparent 46%);
+}
+
+.btn-primary {
+  background: linear-gradient(180deg, var(--violet-500), var(--violet-600));
+  color: #fff;
+  box-shadow:
+    inset 0 1px 0 hsl(270, 80%, 74%),
+    var(--elev-1);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(180deg, var(--violet-400), var(--violet-500));
+}
+
+.btn-primary:active {
+  box-shadow: inset 0 1px 2px hsla(24, 20%, 13%, 0.2);
+}
+
+.btn-primary:disabled {
+  opacity: 0.4;
+}
+
+.dark .btn-primary {
+  background: linear-gradient(180deg, var(--violet-400), var(--violet-500));
+  color: var(--grey-900);
+  box-shadow: inset 0 1px 0 hsl(270, 70%, 84%);
+}
+
+.paper-face {
+  background: linear-gradient(180deg, var(--cat-tint, var(--accent-soft)), var(--surface));
+}
+
+.folder-tab {
+  position: relative;
+  isolation: isolate;
+  --tab-face: var(--hover);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+  background: linear-gradient(180deg, var(--tab-tint, var(--hover)), var(--tab-face));
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.folder-tab:nth-child(even) {
+  transform: translateY(2px);
+}
+
+.folder-tab::before,
+.folder-tab::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  width: 10px;
+  height: 10px;
+  z-index: -1;
+}
+
+.folder-tab::before {
+  left: -10px;
+  background: radial-gradient(circle at 0 0, transparent 10px, var(--tab-face) 10.5px);
+}
+
+.folder-tab::after {
+  right: -10px;
+  background: radial-gradient(circle at 100% 0, transparent 10px, var(--tab-face) 10.5px);
+}
+
+.folder-tab.is-active {
+  z-index: 2;
+  height: 44px;
+  margin-bottom: -1px;
+  padding-bottom: 1px;
+  transform: none;
+  --tab-face: var(--surface);
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+.folder-sheet {
+  position: relative;
+  z-index: 1;
+  margin-top: -1px;
+  border: 1px solid var(--line);
+  border-radius: 0 var(--radius-xl) var(--radius-xl) var(--radius-xl);
+  background: var(--surface);
+  box-shadow: var(--elev-3);
+}
+
+.folder-stack {
+  position: relative;
+}
+
+.folder-stack::before,
+.folder-stack::after {
+  content: "";
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  height: 18px;
+  border: 1px solid var(--line);
+  border-top: none;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  background: var(--surface);
+  z-index: 0;
+}
+
+.folder-stack::before {
+  bottom: -6px;
+}
+
+.folder-stack::after {
+  bottom: -12px;
+  left: 28px;
+  right: 28px;
+  background: var(--sunken);
+}
+
+.card-ear {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(225deg, var(--ear, var(--accent-soft)) 50%, transparent 51%);
+  border-top-right-radius: inherit;
+  pointer-events: none;
 }
 
 @keyframes rise {

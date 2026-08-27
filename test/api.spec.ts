@@ -68,6 +68,9 @@ describe("fidelius api", () => {
 
     const { cookie } = await unlock(ADMIN, secret);
     expect(cookie).toContain("fidelius_unlock=");
+    const unlockedMe = await json("/api/me", { headers: { ...headers(ADMIN), Cookie: cookie.split(";")[0] } });
+    expect(unlockedMe.body.unlocked).toBe(true);
+    expect(typeof unlockedMe.body.unlockExpiresAt).toBe("number");
   });
 
   it("locks after five failed totp attempts", async () => {
@@ -220,5 +223,123 @@ describe("fidelius api", () => {
     });
     expect(overflow.res.status).toBe(400);
     expect(overflow.body.code).toBe("user_limit");
+  });
+
+  it("accepts new categories and rejects invalid payloads", async () => {
+    await enroll(ADMIN);
+    const ok = await json("/api/records", {
+      method: "POST",
+      headers: headers(ADMIN),
+      body: JSON.stringify({
+        title: "prod-db",
+        description: "",
+        category: "database",
+        fields: [
+          { key: "engine", label: "引擎", type: "text", value: "postgres" },
+          { key: "host", label: "主机", type: "text", value: "db.internal" },
+          { key: "database", label: "库名", type: "text", value: "app" },
+          { key: "username", label: "用户名", type: "text", value: "app" },
+          { key: "password", label: "密码", type: "secret", value: "test-password-not-real" },
+        ],
+      }),
+    });
+    expect(ok.res.status).toBe(201);
+
+    const apikey = await json("/api/records", {
+      method: "POST",
+      headers: headers(ADMIN),
+      body: JSON.stringify({
+        title: "openai",
+        description: "",
+        category: "apikey",
+        fields: [
+          { key: "provider", label: "服务商", type: "text", value: "openai" },
+          { key: "secret_key", label: "密钥", type: "secret", value: "test-password-not-real" },
+        ],
+      }),
+    });
+    expect(apikey.res.status).toBe(201);
+
+    const cloud = await json("/api/records", {
+      method: "POST",
+      headers: headers(ADMIN),
+      body: JSON.stringify({
+        title: "cf-account",
+        description: "",
+        category: "cloud",
+        fields: [
+          { key: "provider", label: "云厂商", type: "text", value: "cloudflare" },
+          { key: "access_key", label: "访问密钥", type: "secret", value: "test-password-not-real" },
+        ],
+      }),
+    });
+    expect(cloud.res.status).toBe(201);
+
+    const domain = await json("/api/records", {
+      method: "POST",
+      headers: headers(ADMIN),
+      body: JSON.stringify({
+        title: "example-com",
+        description: "",
+        category: "domain",
+        fields: [{ key: "domain", label: "域名", type: "text", value: "example.com" }],
+      }),
+    });
+    expect(domain.res.status).toBe(201);
+
+    const network = await json("/api/records", {
+      method: "POST",
+      headers: headers(ADMIN),
+      body: JSON.stringify({
+        title: "office-wifi",
+        description: "",
+        category: "network",
+        fields: [
+          { key: "device", label: "设备", type: "text", value: "ap-01" },
+          { key: "wifi_password", label: "Wi-Fi 密码", type: "secret", value: "test-password-not-real" },
+        ],
+      }),
+    });
+    expect(network.res.status).toBe(201);
+
+    const recovery = await json("/api/records", {
+      method: "POST",
+      headers: headers(ADMIN),
+      body: JSON.stringify({
+        title: "github-backup",
+        description: "",
+        category: "recovery",
+        fields: [
+          { key: "service", label: "服务", type: "text", value: "github" },
+          { key: "codes", label: "恢复码", type: "multiline", value: "test-password-not-real" },
+        ],
+      }),
+    });
+    expect(recovery.res.status).toBe(201);
+
+    const badDomain = await json("/api/records", {
+      method: "POST",
+      headers: headers(ADMIN),
+      body: JSON.stringify({
+        title: "bad-domain",
+        description: "",
+        category: "domain",
+        fields: [{ key: "domain", label: "域名", type: "text", value: "nodot" }],
+      }),
+    });
+    expect(badDomain.res.status).toBe(400);
+
+    const unknown = await json("/api/records", {
+      method: "POST",
+      headers: headers(ADMIN),
+      body: JSON.stringify({
+        title: "unknown",
+        description: "",
+        category: "unknown",
+        fields: [{ key: "note", label: "备注", type: "text", value: "x" }],
+      }),
+    });
+    expect(unknown.res.status).toBe(400);
+    expect(unknown.body.code).toBe("validation");
   });
 });

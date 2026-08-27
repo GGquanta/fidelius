@@ -25,7 +25,7 @@ import {
   confirmEnroll,
   createUser,
   disableUser,
-  isUnlocked,
+  getUnlockExpiresAt,
   listUsers,
   lock,
   parseUnlockCookie,
@@ -41,6 +41,7 @@ type AppEnv = {
     email: string;
     user: User | null;
     unlocked: boolean;
+    unlockExpiresAt: number | null;
   };
 };
 
@@ -60,7 +61,9 @@ app.use("/api/*", async (c, next) => {
   const token = user
     ? parseUnlockCookie(c.req.header("Cookie"), user.id)
     : undefined;
-  c.set("unlocked", user ? await isUnlocked(c.env, user.id, token) : false);
+  const unlockExpiresAt = user ? await getUnlockExpiresAt(c.env, user.id, token) : null;
+  c.set("unlocked", unlockExpiresAt !== null);
+  c.set("unlockExpiresAt", unlockExpiresAt);
   await next();
 });
 
@@ -103,12 +106,19 @@ function setUnlockCookie(
 app.get("/api/me", async (c) => {
   const user = c.get("user");
   if (!user) {
-    return c.json({ user: null, email: c.get("email"), unlocked: false, code: "not_provisioned" }, 403);
+    return c.json(
+      { user: null, email: c.get("email"), unlocked: false, unlockExpiresAt: null, code: "not_provisioned" },
+      403,
+    );
   }
   if (user.status === "disabled") {
-    return c.json({ user: publicUser(user), unlocked: false, code: "disabled" }, 403);
+    return c.json({ user: publicUser(user), unlocked: false, unlockExpiresAt: null, code: "disabled" }, 403);
   }
-  return c.json({ user: publicUser(user), unlocked: c.get("unlocked") });
+  return c.json({
+    user: publicUser(user),
+    unlocked: c.get("unlocked"),
+    unlockExpiresAt: c.get("unlockExpiresAt"),
+  });
 });
 
 app.post("/api/enroll/start", async (c) => {
@@ -127,9 +137,9 @@ app.post("/api/enroll/confirm", async (c) => {
 app.post("/api/unlock", async (c) => {
   const user = requireActive(c);
   const body = await c.req.json<{ code?: string }>();
-  const token = await unlock(c.env, user, body.code ?? "");
-  setUnlockCookie(c, user.id, token);
-  return c.json({ unlocked: true });
+  const session = await unlock(c.env, user, body.code ?? "");
+  setUnlockCookie(c, user.id, session.token);
+  return c.json({ unlocked: true, unlockExpiresAt: session.exp });
 });
 
 app.post("/api/lock", async (c) => {

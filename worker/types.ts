@@ -8,7 +8,17 @@ export const UNLOCK_COOKIE = "fidelius_unlock";
 
 export type UserRole = "admin" | "member";
 export type UserStatus = "pending_enroll" | "active" | "disabled";
-export type Category = "server" | "ssl" | "login" | "generic";
+export type Category =
+  | "server"
+  | "database"
+  | "ssl"
+  | "apikey"
+  | "login"
+  | "cloud"
+  | "domain"
+  | "network"
+  | "recovery"
+  | "generic";
 export type FieldType = "text" | "secret" | "multiline";
 
 export interface User {

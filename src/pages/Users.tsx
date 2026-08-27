@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { api, type User } from "../api";
+import { Button } from "../components/Button";
 import { errorMessage } from "../session";
 import { formatTime } from "../templates";
 import { useToast } from "../ui";
@@ -39,11 +40,12 @@ export function UsersPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-5 py-8">
+    <section className="mx-auto max-w-3xl px-5 py-8">
       <div className="flex items-end justify-between gap-4">
-        <h1 className="text-2xl tracking-[-0.04em]">用户</h1>
-        <p className="font-mono text-sm text-muted">
-          {occupied}/{limit}
+        <h1 className="font-display text-3xl tracking-tight">用户</h1>
+        <p className="font-display text-2xl">
+          {occupied}
+          <span className="text-lg text-muted">/{limit}</span>
         </p>
       </div>
       <div className="mt-4 flex gap-1">
@@ -59,29 +61,27 @@ export function UsersPage() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="邮箱"
-          className="rounded-box border border-line bg-surface px-3 py-2 outline-none focus:border-accent"
+          className="rounded-box border border-line-strong bg-surface px-3 py-2 outline-none focus:border-accent"
         />
         <input
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
           placeholder="显示名"
-          className="rounded-box border border-line bg-surface px-3 py-2 outline-none focus:border-accent"
+          className="rounded-box border border-line-strong bg-surface px-3 py-2 outline-none focus:border-accent"
         />
-        <button type="submit" className="rounded-box bg-accent px-4 py-2 text-sm text-white dark:text-stone-900">
-          添加
-        </button>
+        <Button type="submit">添加</Button>
       </form>
       {err ? <p className="mt-4 text-sm text-danger">{err}</p> : null}
       <ul className="mt-8">
         {users.map((item) => (
           <li key={item.id} className="flex items-center justify-between gap-4 border-t border-line py-4">
             <div className="flex items-center gap-3">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-accent-soft text-sm text-accent">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-accent-soft text-sm text-accent-ink">
                 {item.displayName.slice(0, 1)}
               </span>
               <div>
                 <p>{item.displayName}</p>
-                <p className="mt-1 font-mono text-xs text-muted">
+                <p className="mt-1 font-mono text-xs text-tertiary">
                   {item.email} · {formatTime(item.createdAt)}
                 </p>
               </div>
@@ -93,7 +93,7 @@ export function UsersPage() {
               {item.status !== "disabled" && item.role !== "admin" ? (
                 <button
                   type="button"
-                  className="text-sm text-danger"
+                  className="text-sm text-muted hover:text-danger"
                   onClick={() => {
                     void api
                       .disableUser(item.id)
@@ -108,7 +108,7 @@ export function UsersPage() {
           </li>
         ))}
       </ul>
-    </main>
+    </section>
   );
 }
 
@@ -119,7 +119,7 @@ function statusLabel(status: User["status"]): string {
 }
 
 function statusClass(status: User["status"]): string {
-  if (status === "active") return "bg-accent-soft text-accent";
-  if (status === "pending_enroll") return "bg-[var(--cat-login-soft)] text-[var(--cat-login)]";
-  return "bg-danger-soft text-danger";
+  if (status === "active") return "bg-accent-soft text-accent-ink";
+  if (status === "pending_enroll") return "bg-peach-soft text-peach-ink";
+  return "bg-danger-soft text-danger-ink";
 }

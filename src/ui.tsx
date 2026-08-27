@@ -39,7 +39,7 @@ function Toast({ text, onDone }: { text: string; onDone: () => void }) {
     return () => window.clearTimeout(id);
   }, [onDone]);
   return (
-    <div className="fixed bottom-6 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 rounded-box bg-ink px-4 py-2 text-sm text-canvas">
+    <div className="fixed bottom-6 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 rounded-lg bg-ink px-4 py-2 text-sm text-canvas shadow-elev-3">
       <Check size={14} />
       {text}
     </div>

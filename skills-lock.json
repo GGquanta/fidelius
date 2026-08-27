@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "refactoring-ui": {
+      "source": "s0xDk/refactoring-ui-skill",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "d412d972e4e2786c7cf74a3fcd817d637adc746fd096bef8a5fd00fecdacb6a1"
+    }
+  }
+}

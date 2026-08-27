@@ -2,18 +2,10 @@ import { Plus } from "@phosphor-icons/react";
 import { FormEvent, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api, type Category, type RecordField } from "../api";
+import { Button } from "../components/Button";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { errorMessage, useSession } from "../session";
-import { CATEGORY_LABEL, fieldsFromTemplate } from "../templates";
-
-const CATEGORY_OPTIONS = Object.entries(CATEGORY_LABEL) as [Category, string][];
-
-const TEMPLATE_HINT: Record<Category, string> = {
-  server: "主机、端口、账号与密钥按组填写。",
-  ssl: "证书、私钥与有效期放在同一组。",
-  login: "站点账号与恢复码按组填写。",
-  generic: "没有固定模板，按需要添加字段。",
-};
+import { CATEGORIES, TEMPLATE_HINT, fieldsFromTemplate } from "../templates";
 
 function emptyCustom(): RecordField {
   return { key: "", label: "", type: "secret", value: "" };
@@ -100,39 +92,39 @@ export function RecordFormPage() {
 
   return (
     <form onSubmit={(event) => void submit(event)} className="mx-auto max-w-2xl px-5 py-8">
-      <h1 className="text-2xl tracking-[-0.04em]">{editing ? "编辑记录" : "新建记录"}</h1>
+      <h1 className="font-display text-3xl tracking-tight">{editing ? "编辑记录" : "新建记录"}</h1>
       {loading ? <p className="mt-8 text-muted">载入中</p> : null}
       <label className="mt-8 block text-xs text-muted">标题</label>
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        className="mt-2 w-full rounded-box border border-line bg-surface px-3 py-2 outline-none focus:border-accent"
+        className="mt-2 w-full rounded-box border border-line-strong bg-surface px-3 py-2 outline-none focus:border-accent"
       />
       <label className="mt-6 block text-xs text-muted">描述</label>
       <textarea
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         rows={2}
-        className="mt-2 w-full resize-y rounded-box border border-line bg-surface px-3 py-2 outline-none focus:border-accent"
+        className="mt-2 w-full resize-y rounded-box border border-line-strong bg-surface px-3 py-2 outline-none focus:border-accent"
       />
       <p className="mt-6 text-xs text-muted">分类</p>
-      <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {CATEGORY_OPTIONS.map(([value, label]) => (
+      <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
+        {CATEGORIES.filter((item) => item.id !== "all").map((item) => (
           <button
-            key={value}
+            key={item.id}
             type="button"
             disabled={editing}
-            onClick={() => changeCategory(value)}
+            onClick={() => changeCategory(item.id as Category)}
             className={`flex items-center gap-2 rounded-box border px-3 py-2 text-left text-sm ${
-              category === value ? "border-accent bg-accent-soft" : "border-line bg-surface"
+              category === item.id ? "border-accent bg-accent-soft" : "border-line bg-surface"
             }`}
           >
-            <CategoryIcon category={value} size={28} />
-            {label}
+            <CategoryIcon category={item.id} size={28} />
+            <span className="truncate">{item.label}</span>
           </button>
         ))}
       </div>
-      <section className="mt-8 rounded-box border border-line bg-surface p-5">
+      <section className="mt-8 rounded-lg border border-line bg-surface p-5 shadow-elev-1">
         <p className="text-xs text-muted">{TEMPLATE_HINT[category]}</p>
         <div className="mt-4 space-y-4">
           {fields.map((field, index) => (
@@ -155,7 +147,7 @@ export function RecordFormPage() {
                       current.map((item, i) => (i === index ? { ...item, key: e.target.value } : item)),
                     )
                   }
-                  className="rounded-box border border-line bg-surface px-3 py-2 font-mono text-sm outline-none"
+                  className="rounded-box border border-line-strong bg-surface px-3 py-2 font-mono text-sm outline-none"
                 />
                 <input
                   placeholder="标签"
@@ -165,7 +157,7 @@ export function RecordFormPage() {
                       current.map((item, i) => (i === index ? { ...item, label: e.target.value } : item)),
                     )
                   }
-                  className="rounded-box border border-line bg-surface px-3 py-2 outline-none"
+                  className="rounded-box border border-line-strong bg-surface px-3 py-2 outline-none"
                 />
               </div>
               <div className="mt-3">
@@ -190,16 +182,12 @@ export function RecordFormPage() {
       </button>
       {err ? <p className="mt-4 text-sm text-danger">{err}</p> : null}
       <div className="mt-8 flex gap-3">
-        <button
-          type="submit"
-          disabled={busy}
-          className="rounded-box bg-accent px-5 py-2 text-sm text-white disabled:opacity-40 dark:text-stone-900"
-        >
+        <Button type="submit" disabled={busy}>
           保存
-        </button>
-        <button type="button" className="text-sm text-muted" onClick={() => navigate(-1)}>
+        </Button>
+        <Button type="button" tone="tertiary" onClick={() => navigate(-1)}>
           取消
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -221,14 +209,14 @@ function FieldInput({
           value={field.value}
           onChange={(e) => onChange({ ...field, value: e.target.value })}
           rows={6}
-          className="mt-2 w-full resize-y rounded-box border border-line bg-canvas p-3 font-mono text-sm outline-none focus:border-accent"
+          className="mt-2 w-full resize-y rounded-box border border-line-strong bg-canvas p-3 font-mono text-sm outline-none focus:border-accent"
         />
       ) : (
         <input
           type={field.type === "secret" ? "password" : "text"}
           value={field.value}
           onChange={(e) => onChange({ ...field, value: e.target.value })}
-          className="mt-2 w-full rounded-box border border-line bg-canvas px-3 py-2 font-mono text-sm outline-none focus:border-accent"
+          className="mt-2 w-full rounded-box border border-line-strong bg-canvas px-3 py-2 font-mono text-sm outline-none focus:border-accent"
         />
       )}
     </label>

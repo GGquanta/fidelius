@@ -1,4 +1,14 @@
-export type Category = "server" | "ssl" | "login" | "generic";
+export type Category =
+  | "server"
+  | "database"
+  | "ssl"
+  | "apikey"
+  | "login"
+  | "cloud"
+  | "domain"
+  | "network"
+  | "recovery"
+  | "generic";
 export type FieldType = "text" | "secret" | "multiline";
 export type UserRole = "admin" | "member";
 export type UserStatus = "pending_enroll" | "active" | "disabled";
@@ -76,15 +86,17 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export function getMe() {
-  return request<{ user: User; unlocked: boolean }>("/api/me").catch((error: unknown) => {
-    if (error instanceof ApiClientError && error.code === "not_provisioned") {
-      return { user: null, unlocked: false, code: "not_provisioned" as const };
-    }
-    if (error instanceof ApiClientError && error.code === "disabled") {
-      return { user: null, unlocked: false, code: "disabled" as const };
-    }
-    throw error;
-  });
+  return request<{ user: User; unlocked: boolean; unlockExpiresAt: number | null }>("/api/me").catch(
+    (error: unknown) => {
+      if (error instanceof ApiClientError && error.code === "not_provisioned") {
+        return { user: null, unlocked: false, unlockExpiresAt: null, code: "not_provisioned" as const };
+      }
+      if (error instanceof ApiClientError && error.code === "disabled") {
+        return { user: null, unlocked: false, unlockExpiresAt: null, code: "disabled" as const };
+      }
+      throw error;
+    },
+  );
 }
 
 export const api = {
@@ -92,7 +104,10 @@ export const api = {
   enrollConfirm: (code: string) =>
     request<{ user: User }>("/api/enroll/confirm", { method: "POST", body: JSON.stringify({ code }) }),
   unlock: (code: string) =>
-    request<{ unlocked: boolean }>("/api/unlock", { method: "POST", body: JSON.stringify({ code }) }),
+    request<{ unlocked: boolean; unlockExpiresAt: number }>("/api/unlock", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    }),
   lock: () => request<{ unlocked: boolean }>("/api/lock", { method: "POST" }),
   records: (params?: { category?: string; q?: string }) => {
     const search = new URLSearchParams();

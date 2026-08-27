@@ -33,6 +33,7 @@ import {
   resolveOrBootstrapUser,
   startEnroll,
   unlock,
+  updateDisplayName,
 } from "./users";
 
 type AppEnv = {
@@ -119,6 +120,13 @@ app.get("/api/me", async (c) => {
     unlocked: c.get("unlocked"),
     unlockExpiresAt: c.get("unlockExpiresAt"),
   });
+});
+
+app.patch("/api/me", async (c) => {
+  const user = requireActive(c);
+  const body = await c.req.json<{ displayName?: string }>();
+  const updated = await updateDisplayName(c.env, user, body.displayName ?? "");
+  return c.json({ user: publicUser(updated) });
 });
 
 app.post("/api/enroll/start", async (c) => {

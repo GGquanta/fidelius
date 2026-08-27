@@ -7,11 +7,10 @@ import { RecordFormPage } from "./pages/RecordForm";
 import { UsersPage } from "./pages/Users";
 import { VaultPage } from "./pages/Vault";
 import { SessionProvider, useSession } from "./session";
-import { ToastHost, useToast } from "./ui";
+import { ToastHost } from "./ui";
 
 function Shell() {
   const { code, user, error } = useSession();
-  const toast = useToast();
 
   if (code === "loading") {
     return <main className="grid min-h-[100dvh] place-items-center text-muted">载入中</main>;
@@ -30,7 +29,7 @@ function Shell() {
   }
 
   return (
-    <AppShell onToast={toast}>
+    <AppShell>
       <Routes>
         <Route path="/" element={<DashboardPage />} />
         <Route path="/vault" element={<VaultPage />} />

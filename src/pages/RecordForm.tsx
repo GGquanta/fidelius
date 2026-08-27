@@ -2,10 +2,13 @@ import { Plus } from "@phosphor-icons/react";
 import { FormEvent, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api, type Category, type RecordField } from "../api";
+import { BackLink } from "../components/BackLink";
 import { Button } from "../components/Button";
 import { CategoryIcon } from "../components/CategoryIcon";
+import { SensitiveUnlock } from "../components/UnlockPanel";
 import { errorMessage, useSession } from "../session";
 import { CATEGORIES, TEMPLATE_HINT, fieldsFromTemplate } from "../templates";
+import { useToast } from "../ui";
 
 function emptyCustom(): RecordField {
   return { key: "", label: "", type: "secret", value: "" };
@@ -15,6 +18,7 @@ export function RecordFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { unlocked } = useSession();
+  const toast = useToast();
   const editing = Boolean(id);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -34,7 +38,7 @@ export function RecordFormPage() {
         setDescription(meta.record.description);
         setCategory(meta.record.category);
         if (!unlocked) {
-          setErr("编辑前需要开锁，以便载入现有值");
+          setErr("");
           setFields(meta.record.fieldMeta.map((f) => ({ ...f, value: "" })));
           setLoading(false);
           return;
@@ -91,9 +95,15 @@ export function RecordFormPage() {
   }
 
   return (
-    <form onSubmit={(event) => void submit(event)} className="mx-auto max-w-2xl px-5 py-8">
-      <h1 className="font-display text-3xl tracking-tight">{editing ? "编辑记录" : "新建记录"}</h1>
+    <form onSubmit={(event) => void submit(event)} className="mx-auto max-w-2xl px-6 py-8">
+      <BackLink to={editing && id ? `/records/${id}` : "/vault"} label={editing ? "返回记录" : "返回保险库"} />
+      <h1 className="font-display mt-4 text-3xl tracking-tight">{editing ? "编辑记录" : "新建记录"}</h1>
       {loading ? <p className="mt-8 text-muted">载入中</p> : null}
+      {editing ? (
+        <div className="mt-6">
+          <SensitiveUnlock onToast={toast} />
+        </div>
+      ) : null}
       <label className="mt-8 block text-xs text-muted">标题</label>
       <input
         value={title}
@@ -182,7 +192,7 @@ export function RecordFormPage() {
       </button>
       {err ? <p className="mt-4 text-sm text-danger">{err}</p> : null}
       <div className="mt-8 flex gap-3">
-        <Button type="submit" disabled={busy}>
+        <Button type="submit" disabled={busy || (editing && !unlocked)}>
           保存
         </Button>
         <Button type="button" tone="tertiary" onClick={() => navigate(-1)}>

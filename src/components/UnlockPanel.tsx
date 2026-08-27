@@ -89,3 +89,37 @@ export function UnlockPanel({
     </div>
   );
 }
+
+export function SensitiveUnlock({ onToast }: { onToast: (text: string) => void }) {
+  const { unlocked, doLock } = useSession();
+  const [open, setOpen] = useState(false);
+
+  if (unlocked) {
+    return (
+      <div className="mb-5 flex items-center justify-between gap-3 border-b border-line pb-4">
+        <p className="flex items-center gap-2 text-sm text-muted">
+          <LockSimpleOpen size={16} />
+          已开锁，离开本页会自动封存
+        </p>
+        <button type="button" className="text-sm text-muted hover:text-ink" onClick={() => void doLock().then(() => onToast("已封存"))}>
+          封存
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="mb-5 flex items-center gap-3 rounded-box bg-peach-soft px-4 py-3">
+        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-tile bg-surface text-peach-ink">
+          <LockSimple size={16} />
+        </span>
+        <p className="min-w-0 flex-1 text-sm text-peach-ink">敏感值已封存。开锁后揭开。</p>
+        <Button type="button" onClick={() => setOpen(true)}>
+          开锁
+        </Button>
+      </div>
+      <UnlockPanel open={open} onClose={() => setOpen(false)} onToast={onToast} />
+    </>
+  );
+}

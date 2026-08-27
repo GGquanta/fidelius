@@ -109,6 +109,11 @@ export const api = {
       body: JSON.stringify({ code }),
     }),
   lock: () => request<{ unlocked: boolean }>("/api/lock", { method: "POST" }),
+  updateMe: (displayName: string) =>
+    request<{ user: User }>("/api/me", {
+      method: "PATCH",
+      body: JSON.stringify({ displayName }),
+    }),
   records: (params?: { category?: string; q?: string }) => {
     const search = new URLSearchParams();
     if (params?.category) search.set("category", params.category);

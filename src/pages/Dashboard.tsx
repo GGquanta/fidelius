@@ -1,18 +1,13 @@
-import { LockSimple, LockSimpleOpen, Plus } from "@phosphor-icons/react";
+import { Plus } from "@phosphor-icons/react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, type RecordMeta } from "../api";
-import { Button } from "../components/Button";
 import { CategoryIcon, categoryTone, type CategoryId } from "../components/CategoryIcon";
 import { DonutRing, StackedBar, WeekBars } from "../components/charts";
 import { RecordCard } from "../components/RecordCard";
 import { StatCard } from "../components/StatCard";
-import { UnlockPanel } from "../components/UnlockPanel";
 import { errorMessage, useSession } from "../session";
 import { CATEGORIES } from "../templates";
-import { useToast } from "../ui";
-
-const UNLOCK_MS = 600_000;
 
 function weekBuckets(records: RecordMeta[]): number[] {
   const now = Date.now();
@@ -25,53 +20,12 @@ function weekBuckets(records: RecordMeta[]): number[] {
   return buckets;
 }
 
-function UnlockRing({ expiresAt }: { expiresAt: number | null }) {
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(id);
-  }, []);
-  const remain = Math.max(0, (expiresAt ?? 0) - now);
-  const ratio = remain / UNLOCK_MS;
-  const radius = 28;
-  const circ = 2 * Math.PI * radius;
-  const minutes = Math.floor(remain / 60000);
-  const seconds = Math.floor((remain % 60000) / 1000)
-    .toString()
-    .padStart(2, "0");
-  return (
-    <div className="flex items-center gap-3">
-      <svg width="72" height="72" viewBox="0 0 72 72" aria-hidden>
-        <circle cx="36" cy="36" r={radius} fill="none" stroke="var(--accent-soft)" strokeWidth="6" />
-        <circle
-          cx="36"
-          cy="36"
-          r={radius}
-          fill="none"
-          stroke="var(--accent)"
-          strokeWidth="6"
-          strokeDasharray={`${circ * ratio} ${circ}`}
-          transform="rotate(-90 36 36)"
-        />
-      </svg>
-      <div>
-        <p className="font-display text-2xl leading-none tracking-tight">
-          {minutes}:{seconds}
-        </p>
-        <p className="mt-1 text-sm text-muted">后自动封存</p>
-      </div>
-    </div>
-  );
-}
-
 export function DashboardPage() {
-  const { user, unlocked, unlockExpiresAt, doLock } = useSession();
-  const toast = useToast();
+  const { user } = useSession();
   const [records, setRecords] = useState<RecordMeta[] | null>(null);
   const [occupied, setOccupied] = useState<number | null>(null);
   const [limit, setLimit] = useState(10);
   const [err, setErr] = useState("");
-  const [unlockOpen, setUnlockOpen] = useState(false);
 
   useEffect(() => {
     void api
@@ -115,7 +69,7 @@ export function DashboardPage() {
   const hello = hour < 12 ? "早上好" : hour < 18 ? "下午好" : "晚上好";
 
   return (
-    <section className="mesh-glow px-5 py-6">
+    <section className="mesh-glow px-6 py-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-sm text-muted">
@@ -127,38 +81,6 @@ export function DashboardPage() {
           <Plus size={16} />
           新建
         </Link>
-      </div>
-
-      <div
-        className={`mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border p-5 shadow-elev-2 ${
-          unlocked ? "border-line bg-surface" : "border-peach/40 bg-peach-soft"
-        }`}
-      >
-        <div className="flex items-center gap-3">
-          <span
-            className={`inline-flex h-10 w-10 items-center justify-center rounded-tile ${
-              unlocked ? "bg-accent-soft text-accent" : "bg-surface text-peach-ink"
-            }`}
-          >
-            {unlocked ? <LockSimpleOpen size={20} /> : <LockSimple size={20} />}
-          </span>
-          <div>
-            <p className="font-medium">{unlocked ? "保险库已开锁" : "保险库已封存"}</p>
-            <p className={`text-sm ${unlocked ? "text-muted" : "text-peach-ink"}`}>
-              {unlocked ? "敏感字段可以揭开" : "开锁后才能查看秘密值"}
-            </p>
-          </div>
-        </div>
-        {unlocked ? (
-          <div className="flex items-center gap-4">
-            <UnlockRing expiresAt={unlockExpiresAt} />
-            <Button tone="secondary" onClick={() => void doLock().then(() => toast("已封存"))}>
-              封存
-            </Button>
-          </div>
-        ) : (
-          <Button onClick={() => setUnlockOpen(true)}>开锁</Button>
-        )}
       </div>
 
       {err ? <p className="mt-6 text-sm text-danger">{err}</p> : null}
@@ -207,7 +129,7 @@ export function DashboardPage() {
               <Link
                 key={item.id}
                 to={`/vault?category=${item.id}`}
-                className="paper-face rounded-lg border border-line p-4 shadow-elev-1 transition hover:-translate-y-0.5 hover:shadow-elev-2"
+                className="paper-face rounded-lg border border-line p-4 shadow-elev-1"
                 style={{ ["--cat-tint" as string]: tone.soft }}
               >
                 <CategoryIcon category={item.id} />
@@ -222,7 +144,7 @@ export function DashboardPage() {
       <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
         <article className="rounded-xl border border-line bg-surface p-5 shadow-elev-1">
           <h2 className="text-sm text-muted">最近更新</h2>
-          <div className="mt-4 space-y-3">
+          <div className="mt-4 space-y-2">
             {stats.recent.length === 0 ? <p className="text-sm text-tertiary">还没有记录</p> : null}
             {stats.recent.map((record) => (
               <RecordCard key={record.id} record={record} />
@@ -259,7 +181,6 @@ export function DashboardPage() {
           ) : null}
         </div>
       </div>
-      <UnlockPanel open={unlockOpen} onClose={() => setUnlockOpen(false)} onToast={toast} />
     </section>
   );
 }

@@ -342,4 +342,33 @@ describe("fidelius api", () => {
     expect(unknown.res.status).toBe(400);
     expect(unknown.body.code).toBe("validation");
   });
+
+  it("lets a user update their own display name", async () => {
+    await enroll(ADMIN);
+    const empty = await json("/api/me", {
+      method: "PATCH",
+      headers: headers(ADMIN),
+      body: JSON.stringify({ displayName: "   " }),
+    });
+    expect(empty.res.status).toBe(400);
+    expect(empty.body.code).toBe("validation");
+
+    const tooLong = await json("/api/me", {
+      method: "PATCH",
+      headers: headers(ADMIN),
+      body: JSON.stringify({ displayName: "字".repeat(33) }),
+    });
+    expect(tooLong.res.status).toBe(400);
+
+    const ok = await json("/api/me", {
+      method: "PATCH",
+      headers: headers(ADMIN),
+      body: JSON.stringify({ displayName: "阿波罗" }),
+    });
+    expect(ok.res.status).toBe(200);
+    expect(ok.body.user).toMatchObject({ email: ADMIN, displayName: "阿波罗" });
+
+    const me = await json("/api/me", { headers: headers(ADMIN) });
+    expect(me.body.user).toMatchObject({ displayName: "阿波罗" });
+  });
 });

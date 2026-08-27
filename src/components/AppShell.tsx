@@ -1,6 +1,6 @@
 import {
-  LockSimple,
-  LockSimpleOpen,
+  CaretDown,
+  CaretRight,
   MagnifyingGlass,
   Moon,
   SquaresFour,
@@ -10,26 +10,54 @@ import {
 } from "@phosphor-icons/react";
 import { FormEvent, useEffect, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { api } from "../api";
 import { useSession } from "../session";
+import { CATEGORIES } from "../templates";
 import { useTheme } from "../ui";
-import { Button } from "./Button";
+import { CategoryIcon, type CategoryId } from "./CategoryIcon";
+import { ProfilePanel } from "./ProfilePanel";
 import { SealMark } from "./SealMark";
-import { UnlockPanel } from "./UnlockPanel";
 
-export function AppShell({
-  children,
-  onToast,
-}: {
-  children: React.ReactNode;
-  onToast: (text: string) => void;
-}) {
+function isSensitivePath(pathname: string) {
+  return pathname.startsWith("/records/");
+}
+
+function itemClass(active: boolean) {
+  return `flex h-9 w-full items-center gap-2 rounded-box px-3 text-sm ${
+    active ? "bg-accent-soft text-accent-ink" : "text-muted hover:bg-hover hover:text-ink"
+  }`;
+}
+
+export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, unlocked, doLock } = useSession();
   const { dark, toggle } = useTheme();
   const [params, setParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
   const [query, setQuery] = useState(params.get("q") ?? "");
-  const [unlockOpen, setUnlockOpen] = useState(false);
+  const [counts, setCounts] = useState<Record<string, number>>({ all: 0 });
+  const [vaultOpen, setVaultOpen] = useState(true);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const category = (params.get("category") as CategoryId | null) ?? "all";
+  const onVault = location.pathname === "/vault";
+  const inVaultSection =
+    onVault || location.pathname === "/new" || location.pathname.startsWith("/records/");
+
+  useEffect(() => {
+    if (!isSensitivePath(location.pathname) && unlocked) {
+      void doLock();
+    }
+  }, [location.pathname, unlocked, doLock]);
+
+  useEffect(() => {
+    void api.records().then((result) => {
+      const next: Record<string, number> = { all: result.records.length };
+      for (const record of result.records) {
+        next[record.category] = (next[record.category] ?? 0) + 1;
+      }
+      setCounts(next);
+    });
+  }, [location.pathname]);
 
   useEffect(() => {
     setQuery(params.get("q") ?? "");
@@ -62,68 +90,130 @@ export function AppShell({
     applySearch(query, false);
   }
 
-  const nav = [
-    { to: "/", label: "概览", icon: SquaresFour, end: true },
-    { to: "/vault", label: "保险库", icon: Vault, end: false },
-    ...(user?.role === "admin" ? [{ to: "/users", label: "团队", icon: Users, end: false }] : []),
-  ];
+  function selectCategory(id: CategoryId) {
+    setVaultOpen(true);
+    const next = new URLSearchParams();
+    const q = params.get("q");
+    if (q) next.set("q", q);
+    if (id !== "all") next.set("category", id);
+    navigate({ pathname: "/vault", search: next.toString() });
+  }
 
   return (
-    <div className="min-h-[100dvh] md:grid md:grid-cols-[240px_1fr]">
-      <aside className="flex flex-col border-b border-line bg-surface md:border-b-0 md:border-r">
-        <Link to="/" className="flex h-16 items-center gap-2.5 px-5">
-          <SealMark />
-          <span className="font-medium tracking-[-0.04em]">Fidelius</span>
+    <div className="h-[100dvh] md:grid md:grid-cols-[272px_1fr]">
+      <aside className="flex h-auto flex-col border-b border-line bg-canvas md:h-[100dvh] md:border-b-0 md:border-r">
+        <Link to="/" className="mx-3 mt-3 flex items-center gap-3 rounded-lg px-2 py-3 hover:bg-hover">
+          <SealMark size={36} />
+          <span className="min-w-0">
+            <span className="block text-base font-medium tracking-[-0.04em]">Fidelius</span>
+            <span className="mt-0.5 block text-[12px] leading-snug text-tertiary">封缄之后，各安其位</span>
+          </span>
         </Link>
-        <nav className="flex gap-1 overflow-x-auto px-3 pb-3 md:flex-1 md:flex-col md:overflow-visible">
-          {nav.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                `flex items-center gap-2 rounded-box px-3 py-2 text-sm ${
-                  isActive ? "bg-accent-soft text-accent-ink" : "text-muted hover:bg-hover hover:text-ink"
-                }`
-              }
-            >
-              <item.icon size={16} />
-              {item.label}
-            </NavLink>
-          ))}
+        <div className="mx-5 mt-1 h-px bg-line" />
+
+        <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
+          <p className="px-3 pb-2 text-[12px] tracking-[0.08em] text-tertiary">工作台</p>
+          <NavLink to="/" end className={({ isActive }) => itemClass(isActive)}>
+            <SquaresFour size={16} className="text-tertiary" />
+            概览
+          </NavLink>
+
+          <div className="mt-6">
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                className={`flex h-9 min-w-0 flex-1 items-center gap-2 rounded-box px-3 text-sm ${
+                  inVaultSection && !onVault
+                    ? "bg-accent-soft text-accent-ink"
+                    : inVaultSection
+                      ? "text-ink"
+                      : "text-muted hover:bg-hover hover:text-ink"
+                }`}
+                onClick={() => selectCategory("all")}
+              >
+                <Vault size={16} className="text-tertiary" />
+                <span className="min-w-0 flex-1 text-left">保险库</span>
+                <span className="font-mono text-[12px] text-tertiary">{counts.all ?? 0}</span>
+              </button>
+              <button
+                type="button"
+                className="rounded-box p-2 text-tertiary hover:bg-hover hover:text-ink"
+                aria-expanded={vaultOpen}
+                aria-label={vaultOpen ? "收起分类" : "展开分类"}
+                onClick={() => setVaultOpen((open) => !open)}
+              >
+                {vaultOpen ? <CaretDown size={12} /> : <CaretRight size={12} />}
+              </button>
+            </div>
+            {vaultOpen ? (
+              <ul className="side-tree">
+                {CATEGORIES.map((item) => {
+                  const active = onVault && category === item.id;
+                  return (
+                    <li key={item.id}>
+                      <button
+                        type="button"
+                        onClick={() => selectCategory(item.id)}
+                        className={`flex h-8 w-full items-center gap-2 rounded-box px-2 text-sm ${
+                          active ? "bg-accent-soft text-accent-ink" : "text-muted hover:bg-hover hover:text-ink"
+                        }`}
+                      >
+                        <CategoryIcon category={item.id} size={20} />
+                        <span className="min-w-0 flex-1 truncate text-left">{item.label}</span>
+                        <span className="font-mono text-[12px] text-tertiary">{counts[item.id] ?? 0}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
+          </div>
+
+          {user?.role === "admin" ? (
+            <>
+              <p className="mt-6 px-3 pb-2 text-[12px] tracking-[0.08em] text-tertiary">管理</p>
+              <NavLink to="/users" className={({ isActive }) => itemClass(isActive)}>
+                <Users size={16} className="text-tertiary" />
+                团队
+              </NavLink>
+            </>
+          ) : null}
         </nav>
-        <div className="space-y-3 border-t border-line p-4">
-          {unlocked ? (
+
+        <div className="p-3">
+          <div className="flex items-center gap-1 rounded-lg border border-line bg-surface p-1">
             <button
               type="button"
-              className="flex w-full items-center gap-2 rounded-lg bg-accent-soft px-3 py-2.5 text-left text-sm text-accent-ink"
-              onClick={() => void doLock().then(() => onToast("已封存"))}
+              className="flex min-w-0 flex-1 items-center gap-3 rounded-box px-2 py-2 text-left hover:bg-hover"
+              onClick={() => setProfileOpen(true)}
+              aria-haspopup="dialog"
+              aria-expanded={profileOpen}
             >
-              <LockSimpleOpen size={16} />
-              封存
+              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-sm text-accent-ink">
+                {user?.displayName.slice(0, 1)}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm">{user?.displayName}</span>
+                <span className="block text-[12px] text-tertiary">{user?.role === "admin" ? "管理员" : "成员"}</span>
+              </span>
+              <CaretRight size={12} className="shrink-0 text-tertiary" />
             </button>
-          ) : (
             <button
               type="button"
-              className="btn-primary flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm"
-              onClick={() => setUnlockOpen(true)}
+              onClick={toggle}
+              className="shrink-0 rounded-box p-2 text-muted hover:bg-hover hover:text-ink"
+              aria-label="切换主题"
             >
-              <LockSimple size={16} />
-              开锁
-            </button>
-          )}
-          <div className="flex items-center justify-between text-sm text-muted">
-            <span className="truncate">{user?.displayName}</span>
-            <button type="button" onClick={toggle} className="rounded-box p-2 hover:bg-hover hover:text-ink" aria-label="切换主题">
               {dark ? <Sun size={16} /> : <Moon size={16} />}
             </button>
           </div>
         </div>
+        <ProfilePanel open={profileOpen} onClose={() => setProfileOpen(false)} />
       </aside>
-      <div className="flex min-w-0 flex-col">
-        <header className="flex h-16 items-center gap-3 border-b border-line bg-surface/80 px-4 backdrop-blur-sm">
-          <form onSubmit={search} className="relative min-w-0 flex-1">
-            <MagnifyingGlass size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+      <div className="flex min-h-0 min-w-0 flex-col bg-canvas">
+        <header className="flex h-16 shrink-0 items-center border-b border-line bg-surface px-6">
+          <form onSubmit={search} className="relative w-full max-w-xl">
+            <MagnifyingGlass size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-tertiary" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
@@ -131,21 +221,9 @@ export function AppShell({
               className="w-full rounded-box border border-line-strong bg-canvas py-2 pl-9 pr-3 text-sm outline-none focus:border-accent"
             />
           </form>
-          {unlocked ? (
-            <Button tone="secondary" onClick={() => void doLock().then(() => onToast("已封存"))} className="hidden sm:inline-flex">
-              <LockSimpleOpen size={14} />
-              封存
-            </Button>
-          ) : (
-            <Button onClick={() => setUnlockOpen(true)} className="hidden sm:inline-flex">
-              <LockSimple size={14} />
-              开锁
-            </Button>
-          )}
         </header>
-        <main className="min-w-0 flex-1">{children}</main>
+        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto">{children}</main>
       </div>
-      <UnlockPanel open={unlockOpen} onClose={() => setUnlockOpen(false)} onToast={onToast} />
     </div>
   );
 }

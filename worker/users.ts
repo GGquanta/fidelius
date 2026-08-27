@@ -133,6 +133,19 @@ export async function disableUser(env: Env, id: string, actor: User): Promise<Us
   return user;
 }
 
+const DISPLAY_NAME_MAX = 32;
+
+export async function updateDisplayName(env: Env, user: User, displayName: string): Promise<User> {
+  const name = displayName.trim();
+  if (!name) throw new ApiError(400, "validation", "显示名不能为空");
+  if (name.length > DISPLAY_NAME_MAX) throw new ApiError(400, "validation", "显示名最多 32 字");
+  if (name === user.displayName) return user;
+  user.displayName = name;
+  user.updatedAt = nowIso();
+  await saveUser(env, user);
+  return user;
+}
+
 export async function startEnroll(
   env: Env,
   user: User,

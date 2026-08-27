@@ -57,34 +57,35 @@ export function VaultPage() {
   }
 
   return (
-    <section className="px-5 py-6">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="font-display text-3xl tracking-tight">{title}</h1>
+    <section className="px-6 py-6">
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <p className="text-[12px] tracking-[0.08em] text-tertiary">抽屉</p>
+          <h1 className="font-display mt-1 text-3xl tracking-tight">{title}</h1>
+        </div>
         <Link to="/new" className="btn-primary inline-flex items-center gap-1.5 rounded-box px-4 py-2 text-sm">
           <Plus size={16} />
           新建
         </Link>
       </div>
       {err ? <p className="mt-6 text-sm text-danger">{err}</p> : null}
-      <div className="mt-6">
+      <div className="folder-cabinet mt-6">
         <FolderTabs active={category} counts={counts} onSelect={selectCategory} />
-        <div className="folder-stack">
-          <div className="folder-sheet px-5 py-6">
-            {records === null && !err ? (
-              <div className="space-y-3">
-                <div className="h-24 rounded-lg bg-hover" />
-                <div className="h-24 rounded-lg bg-hover" />
-              </div>
-            ) : null}
-            {records && records.length === 0 ? <EmptyState category={category} /> : null}
-            <ul className="grid gap-3 sm:grid-cols-2">
-              {records?.map((record) => (
-                <li key={record.id}>
-                  <RecordCard record={record} />
-                </li>
-              ))}
-            </ul>
-          </div>
+        <div className="folder-sheet px-6 py-6">
+          {records === null && !err ? (
+            <div className="space-y-3">
+              <div className="h-24 rounded-lg bg-hover" />
+              <div className="h-24 rounded-lg bg-hover" />
+            </div>
+          ) : null}
+          {records && records.length === 0 ? <EmptyState category={category} /> : null}
+          <ul className="flex flex-col gap-3">
+            {records?.map((record) => (
+              <li key={record.id}>
+                <RecordCard record={record} flush />
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </section>

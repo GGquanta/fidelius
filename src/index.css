@@ -314,96 +314,67 @@ button {
   background: linear-gradient(180deg, var(--cat-tint, var(--accent-soft)), var(--surface));
 }
 
+.folder-cabinet {
+  position: relative;
+}
+
+.folder-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  padding: 0 12px;
+  overflow-x: auto;
+  position: relative;
+  z-index: 2;
+  scrollbar-width: none;
+}
+
+.folder-tabs::-webkit-scrollbar {
+  display: none;
+}
+
 .folder-tab {
   position: relative;
-  isolation: isolate;
-  --tab-face: var(--hover);
-  display: inline-flex;
+  z-index: 0;
+  flex: 0 0 88px;
+  width: 88px;
+  height: 88px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  height: 40px;
-  padding: 0 12px;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 4px;
   border: 1px solid var(--line);
   border-bottom: none;
   border-radius: 12px 12px 0 0;
-  background: linear-gradient(180deg, var(--tab-tint, var(--hover)), var(--tab-face));
+  background: linear-gradient(180deg, var(--tab-tint, var(--hover)), var(--sunken));
   color: var(--muted);
   white-space: nowrap;
 }
 
-.folder-tab:nth-child(even) {
-  transform: translateY(2px);
-}
-
-.folder-tab::before,
-.folder-tab::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  width: 10px;
-  height: 10px;
-  z-index: -1;
-}
-
-.folder-tab::before {
-  left: -10px;
-  background: radial-gradient(circle at 0 0, transparent 10px, var(--tab-face) 10.5px);
-}
-
-.folder-tab::after {
-  right: -10px;
-  background: radial-gradient(circle at 100% 0, transparent 10px, var(--tab-face) 10.5px);
-}
-
 .folder-tab.is-active {
-  z-index: 2;
-  height: 44px;
-  margin-bottom: -1px;
-  padding-bottom: 1px;
-  transform: none;
-  --tab-face: var(--surface);
+  z-index: 3;
   background: var(--surface);
   color: var(--ink);
-  border-color: var(--line);
 }
 
 .folder-sheet {
   position: relative;
   z-index: 1;
   margin-top: -1px;
+  min-height: 480px;
   border: 1px solid var(--line);
-  border-radius: 0 var(--radius-xl) var(--radius-xl) var(--radius-xl);
+  border-radius: var(--radius-md) var(--radius-md) var(--radius-lg) var(--radius-lg);
   background: var(--surface);
   box-shadow: var(--elev-3);
 }
 
-.folder-stack {
-  position: relative;
-}
-
-.folder-stack::before,
-.folder-stack::after {
-  content: "";
-  position: absolute;
-  left: 16px;
-  right: 16px;
-  height: 18px;
-  border: 1px solid var(--line);
-  border-top: none;
-  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-  background: var(--surface);
-  z-index: 0;
-}
-
-.folder-stack::before {
-  bottom: -6px;
-}
-
-.folder-stack::after {
-  bottom: -12px;
-  left: 28px;
-  right: 28px;
-  background: var(--sunken);
+.side-tree {
+  margin: 4px 0 0 22px;
+  padding: 4px 0 4px 12px;
+  border-left: 1px solid var(--line);
 }
 
 .card-ear {

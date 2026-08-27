@@ -11,7 +11,7 @@ export function FolderTabs({
   onSelect: (id: CategoryId) => void;
 }) {
   return (
-    <div className="flex gap-1 overflow-x-auto pb-0" role="tablist" aria-label="分类">
+    <div className="folder-tabs" role="tablist" aria-label="分类">
       {CATEGORIES.map((item) => {
         const selected = active === item.id;
         const tone = categoryTone(item.id);
@@ -22,12 +22,12 @@ export function FolderTabs({
             role="tab"
             aria-selected={selected}
             onClick={() => onSelect(item.id)}
-            className={`folder-tab ${selected ? "is-active min-w-[140px]" : "min-w-12"}`}
+            className={`folder-tab ${selected ? "is-active" : ""}`}
             style={{ ["--tab-tint" as string]: tone.soft }}
           >
-            <CategoryIcon category={item.id} size={28} />
-            {selected ? <span className="text-sm">{item.label}</span> : null}
-            <span className="font-mono text-xs text-tertiary">{counts[item.id] ?? 0}</span>
+            <CategoryIcon category={item.id} size={32} />
+            <span className="max-w-full truncate text-[12px] leading-none">{item.short}</span>
+            <span className="font-mono text-[12px] leading-none text-tertiary">{counts[item.id] ?? 0}</span>
           </button>
         );
       })}

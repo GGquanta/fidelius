@@ -110,8 +110,8 @@ export function nowIso(): string {
   return new Date().toISOString();
 }
 
-export function normalizeEmail(email: string): string {
-  return email.trim().toLowerCase();
+export function normalizeEmail(email: string | undefined | null): string {
+  return String(email ?? "").trim().toLowerCase();
 }
 
 export class ApiError extends Error {

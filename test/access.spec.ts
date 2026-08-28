@@ -1,7 +1,7 @@
 import { exportJWK, generateKeyPair, SignJWT } from "jose";
 import { describe, expect, it } from "vitest";
 import { resolveEmail } from "../worker/access";
-import { ApiError } from "../worker/types";
+import { ApiError, normalizeEmail } from "../worker/types";
 
 const TEAM = "https://example.cloudflareaccess.com";
 const AUD = "aud-not-real";
@@ -21,6 +21,11 @@ function env(overrides: Record<string, unknown> = {}): Env {
 }
 
 describe("production Access JWT", () => {
+  it("normalizeEmail does not throw on missing values", () => {
+    expect(normalizeEmail(undefined)).toBe("");
+    expect(normalizeEmail(null)).toBe("");
+  });
+
   it("rejects production requests without Access identity", async () => {
     await expect(
       resolveEmail(new Request("https://fidelius.test/api/me"), env(), {}),

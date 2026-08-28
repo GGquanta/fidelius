@@ -77,7 +77,7 @@ export async function resolveEmail(
   if (jwtEmail) return jwtEmail;
 
   if (environment !== "production") {
-    return normalizeEmail(env.BOOTSTRAP_ADMIN_EMAIL);
+    return normalizeEmail(env.BOOTSTRAP_ADMIN_EMAIL || "");
   }
 
   console.info(

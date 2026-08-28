@@ -62,7 +62,8 @@ export async function resolveOrBootstrapUser(env: Env, email: string): Promise<U
   if (existing) return existing;
 
   const meta = await getUsersMeta(env);
-  if (meta.count === 0 && email === normalizeEmail(env.BOOTSTRAP_ADMIN_EMAIL)) {
+  const bootstrap = normalizeEmail(env.BOOTSTRAP_ADMIN_EMAIL);
+  if (meta.count === 0 && bootstrap && email === bootstrap) {
     return createUser(env, {
       email,
       displayName: email.split("@")[0] || "管理员",

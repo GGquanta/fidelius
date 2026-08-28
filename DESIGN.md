@@ -18,6 +18,7 @@ fidelius/
 - `FIDELIUS` KV（配置里不写 namespace id；本地模拟，生产由部署自动创建）
 - `MASTER_KEY` secret
 - `BOOTSTRAP_ADMIN_EMAIL` var
+- `TEAM_DOMAIN`、`ACCESS_AUD` var（生产校验 Access JWT；由 Dashboard 注入）
 - `ASSETS`
 
 ## KV 键

@@ -10,7 +10,9 @@
   "upload_source_maps": true,
   "vars": {
     "ENVIRONMENT": "development",
-    "BOOTSTRAP_ADMIN_EMAIL": "admin@example.com"
+    "BOOTSTRAP_ADMIN_EMAIL": "admin@example.com",
+    "TEAM_DOMAIN": "https://example.cloudflareaccess.com",
+    "ACCESS_AUD": "dev-aud-not-real"
   },
   // 不写 id：本地用模拟 KV；Workers Builds 部署时自动创建真实命名空间。
   "kv_namespaces": [

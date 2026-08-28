@@ -48,9 +48,8 @@ npm run dev
 KV 绑定不要写占位 id。部署时 Wrangler 会自动创建 `FIDELIUS` 命名空间。
 
 1. 生产分支 `main`。Build command 设为 `npm run build:production`（或构建变量 `CLOUDFLARE_ENV=production` 再跑 `npm run build`）。Deploy command：`npx wrangler deploy`。关闭非生产分支构建。
-2. Worker → Variables and Secrets：Secret `MASTER_KEY`（32 字节 base64）；Var 填写真实 `BOOTSTRAP_ADMIN_EMAIL`。`env.production` 已开 `keep_vars`，Dashboard 里的邮箱不会被构建清掉。
+2. Worker → Variables and Secrets：Secret `MASTER_KEY`（32 字节 base64）；Var 填写真实 `BOOTSTRAP_ADMIN_EMAIL`、`TEAM_DOMAIN`（`https://<team>.cloudflareaccess.com`）、`ACCESS_AUD`（Access 应用 Audience）。`env.production` 已开 `keep_vars`，Dashboard 里的值不会被构建清掉。
 3. Worker → Access → All traffic。自定义域名在 Access 之后再绑。`workers_dev` 与 Preview URL 已在 `env.production` 关闭。
-4. JWT 身份合进仓库后，再填 `TEAM_DOMAIN` 与 `ACCESS_AUD`。
 
 丢失 `MASTER_KEY` 无法恢复已有记录。不要把 `MASTER_KEY` 写进 `wrangler.jsonc`。顶层 `access.dev` 只给本地，不要当生产身份。
 

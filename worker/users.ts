@@ -1,6 +1,6 @@
 import { decryptJson, encryptJson, importMasterKey, randomBytes, timingSafeEqual } from "./crypto";
 import { consumeRecoveryCode, countRecoveryRemaining, issueRecoveryCodes } from "./recovery";
-import { newTotpSecret, otpauthUrl, verifyTotp } from "./totp";
+import { isDevTotpBypass, newTotpSecret, otpauthUrl, verifyTotpOrBypass } from "./totp";
 import {
   ApiError,
   ENROLL_TTL_SECONDS,
@@ -181,7 +181,7 @@ export async function confirmEnroll(
   const packed = await env.FIDELIUS.get(keys.enroll(user.id));
   if (!packed) throw new ApiError(400, "validation", "请先开始绑定");
   const payload = await decryptJson<TotpPayload>(master, packed);
-  if (!(await verifyTotp(payload.secret, code))) {
+  if (!(await verifyTotpOrBypass(env, payload.secret, code))) {
     throw new ApiError(400, "totp_invalid", "验证码不正确");
   }
 
@@ -221,12 +221,16 @@ async function recordTotpFailure(env: Env, userId: string, lockout: Lockout): Pr
 }
 
 async function verifyCurrentTotp(env: Env, user: User, code: string): Promise<void> {
+  if (isDevTotpBypass(env, code)) {
+    await env.FIDELIUS.delete(keys.lockout(user.id));
+    return;
+  }
   const lockout = await enforceLockout(env, user.id);
   const master = await importMasterKey(env.MASTER_KEY);
   const packed = await env.FIDELIUS.get(keys.totp(user.id));
   if (!packed) throw new ApiError(400, "validation", "未找到验证器信息");
   const payload = await decryptJson<TotpPayload>(master, packed);
-  if (!(await verifyTotp(payload.secret, code))) {
+  if (!(await verifyTotpOrBypass(env, payload.secret, code))) {
     await recordTotpFailure(env, user.id, lockout);
   }
   await env.FIDELIUS.delete(keys.lockout(user.id));
@@ -296,7 +300,7 @@ export async function confirmResetEnroll(
   const packed = await env.FIDELIUS.get(keys.enroll(user.id));
   if (!packed) throw new ApiError(400, "validation", "请先开始更换验证器");
   const payload = await decryptJson<TotpPayload>(master, packed);
-  if (!(await verifyTotp(payload.secret, code))) {
+  if (!(await verifyTotpOrBypass(env, payload.secret, code))) {
     throw new ApiError(400, "totp_invalid", "验证码不正确");
   }
 

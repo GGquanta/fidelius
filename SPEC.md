@@ -45,6 +45,7 @@ Fidelius 是部署在 Cloudflare Workers 上的小团队敏感信息保险库。
 - 列表与详情元数据永不包含敏感值。
 - 敏感值仅在开锁会话有效时通过 `reveal` 返回。
 - 验证码与恢复码共用失败计数：5 次失败锁定 15 分钟。
+- 本地开发可在 `.dev.vars` 设置 `DEV_TOTP_BYPASS`：变量非空且非 production 时，`000000` 可通过绑定、开锁、更换验证器与签发恢复码。生产即使误设该变量也不生效。
 - 用户可主动封存。
 - 个人资料可重新生成恢复码（须当前验证码）；旧码全部作废。已绑定但尚未签发过的用户可在此生成。
 
@@ -56,7 +57,7 @@ Fidelius 是部署在 Cloudflare Workers 上的小团队敏感信息保险库。
 - `fields[]`：键、标签、类型、值（值仅密文存储）
 - `ownerId`、`sharedWith[]`
 - `createdAt`、`updatedAt`
-- 审计日志（最近 100 条）
+- 审计日志（最近 100 条；详情按页拉取，每页 10 条）
 
 分类：`server`、`database`、`ssl`、`apikey`、`login`、`cloud`、`domain`、`network`、`recovery`、`generic`。模板见 `docs/templates.md`。
 

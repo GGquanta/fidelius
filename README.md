@@ -22,9 +22,10 @@ openssl rand -base64 32
 ```
 MASTER_KEY=<base64-32-bytes>
 BOOTSTRAP_ADMIN_EMAIL=admin@example.com
+DEV_TOTP_BYPASS=1
 ```
 
-`.dev.vars` 不要提交。
+`DEV_TOTP_BYPASS` 可选。设了之后，本地可用 `000000` 代替真实验证码（绑定、开锁、更换验证器、签发恢复码）。不要用于生产。`.dev.vars` 不要提交。
 
 ```bash
 npm run dev

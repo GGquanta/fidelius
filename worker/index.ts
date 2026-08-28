@@ -14,6 +14,7 @@ import {
 } from "./records";
 import {
   ApiError,
+  AUDIT_PAGE_SIZE,
   UNLOCK_COOKIE,
   UNLOCK_TTL_SECONDS,
   jsonError,
@@ -274,8 +275,13 @@ app.delete("/api/records/:id/share/:userId", async (c) => {
 
 app.get("/api/records/:id/audit", async (c) => {
   const user = requireActive(c);
-  const entries = await getAudit(c.env, user, c.req.param("id"));
-  return c.json({ entries });
+  const offset = Number.parseInt(c.req.query("offset") ?? "0", 10);
+  const limit = Number.parseInt(c.req.query("limit") ?? String(AUDIT_PAGE_SIZE), 10);
+  if (!Number.isFinite(offset) || offset < 0 || !Number.isFinite(limit) || limit < 1) {
+    throw new ApiError(400, "validation", "分页参数无效");
+  }
+  const result = await getAudit(c.env, user, c.req.param("id"), offset, limit);
+  return c.json(result);
 });
 
 app.get("/api/users", async (c) => {

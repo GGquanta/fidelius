@@ -6,6 +6,7 @@ import type { CategoryId } from "../components/CategoryIcon";
 import { EmptyState } from "../components/EmptyState";
 import { FolderTabs } from "../components/FolderTabs";
 import { RecordCard } from "../components/RecordCard";
+import { LoadingRegion, Skeleton } from "../components/Skeleton";
 import { errorMessage } from "../session";
 import { CATEGORIES, CATEGORY_LABEL } from "../templates";
 
@@ -13,8 +14,7 @@ export function VaultPage() {
   const [params, setParams] = useSearchParams();
   const category = (params.get("category") as CategoryId | null) ?? "all";
   const q = params.get("q") ?? "";
-  const [records, setRecords] = useState<RecordMeta[] | null>(null);
-  const [all, setAll] = useState<RecordMeta[]>([]);
+  const [all, setAll] = useState<RecordMeta[] | null>(null);
   const [err, setErr] = useState("");
 
   useEffect(() => {
@@ -24,20 +24,23 @@ export function VaultPage() {
       .catch((error) => setErr(errorMessage(error)));
   }, []);
 
-  useEffect(() => {
-    setRecords(null);
-    void api
-      .records({
-        category: category === "all" ? undefined : category,
-        q: q || undefined,
-      })
-      .then((result) => setRecords(result.records))
-      .catch((error) => setErr(errorMessage(error)));
-  }, [category, q]);
+  const records = useMemo(() => {
+    if (!all) return null;
+    const needle = q.trim().toLowerCase();
+    return all.filter((record) => {
+      if (category !== "all" && record.category !== category) return false;
+      if (needle) {
+        const hay = `${record.title} ${record.description}`.toLowerCase();
+        if (!hay.includes(needle)) return false;
+      }
+      return true;
+    });
+  }, [all, category, q]);
 
   const counts = useMemo(() => {
-    const next: Record<string, number> = { all: all.length };
-    for (const record of all) {
+    const list = all ?? [];
+    const next: Record<string, number> = { all: list.length };
+    for (const record of list) {
       next[record.category] = (next[record.category] ?? 0) + 1;
     }
     return next;
@@ -63,31 +66,43 @@ export function VaultPage() {
           <p className="text-[12px] tracking-[0.08em] text-tertiary">记录</p>
           <h1 className="font-display mt-1 text-3xl tracking-tight">{title}</h1>
         </div>
-        <Link to="/new" className="btn-primary inline-flex items-center gap-1.5 rounded-box px-4 py-2 text-sm">
+        <Link to="/new" viewTransition className="btn-primary fx-hover fx-press inline-flex items-center gap-1.5 rounded-box px-4 py-2 text-sm">
           <Plus size={16} />
           新建
         </Link>
       </div>
       {err ? <p className="mt-6 text-sm text-danger">{err}</p> : null}
       <div className="folder-cabinet mt-6">
-        <FolderTabs active={category} counts={counts} onSelect={selectCategory} />
+        <FolderTabs active={category} counts={counts} countsReady={all !== null} onSelect={selectCategory} />
         <div className="folder-sheet px-6 py-6">
           {records === null && !err ? (
-            <ul className="record-grid">
-              <li className="h-28 rounded-lg bg-hover" />
-              <li className="h-28 rounded-lg bg-hover" />
-              <li className="h-28 rounded-lg bg-hover" />
-              <li className="h-28 rounded-lg bg-hover" />
+            <LoadingRegion>
+              <ul className="record-grid">
+                <li>
+                  <Skeleton className="block h-28 w-full rounded-lg" />
+                </li>
+                <li>
+                  <Skeleton className="block h-28 w-full rounded-lg" />
+                </li>
+                <li>
+                  <Skeleton className="block h-28 w-full rounded-lg" />
+                </li>
+                <li>
+                  <Skeleton className="block h-28 w-full rounded-lg" />
+                </li>
+              </ul>
+            </LoadingRegion>
+          ) : null}
+          {records && records.length === 0 ? <EmptyState category={category} query={q} /> : null}
+          {records && records.length > 0 ? (
+            <ul className="record-grid rise" key={`${category}-${q}`}>
+              {records.map((record) => (
+                <li key={record.id}>
+                  <RecordCard record={record} flush />
+                </li>
+              ))}
             </ul>
           ) : null}
-          {records && records.length === 0 ? <EmptyState category={category} /> : null}
-          <ul className="record-grid">
-            {records?.map((record) => (
-              <li key={record.id}>
-                <RecordCard record={record} flush />
-              </li>
-            ))}
-          </ul>
         </div>
       </div>
     </section>

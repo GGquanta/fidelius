@@ -69,20 +69,38 @@ export class ApiClientError extends Error {
   }
 }
 
+const inflight = new Map<string, Promise<unknown>>();
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, {
-    ...init,
-    credentials: "same-origin",
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
-  });
-  const body = (await res.json()) as { error?: string; code?: string } & T;
-  if (!res.ok) {
-    throw new ApiClientError(body.error ?? "请求失败", body.code ?? "error", res.status);
+  const method = (init?.method ?? "GET").toUpperCase();
+  const key = `${method} ${path}`;
+  const coalesce = method === "GET";
+  if (coalesce) {
+    const existing = inflight.get(key);
+    if (existing) return existing as Promise<T>;
   }
-  return body;
+
+  const pending = (async () => {
+    const res = await fetch(path, {
+      ...init,
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json",
+        ...(init?.headers ?? {}),
+      },
+    });
+    const body = (await res.json()) as { error?: string; code?: string } & T;
+    if (!res.ok) {
+      throw new ApiClientError(body.error ?? "请求失败", body.code ?? "error", res.status);
+    }
+    return body;
+  })();
+
+  if (coalesce) {
+    inflight.set(key, pending);
+    void pending.finally(() => inflight.delete(key));
+  }
+  return pending;
 }
 
 export function getMe() {
@@ -172,7 +190,13 @@ export const api = {
     }),
   unshare: (id: string, userId: string) =>
     request<{ record: RecordMeta }>(`/api/records/${id}/share/${userId}`, { method: "DELETE" }),
-  audit: (id: string) => request<{ entries: AuditEntry[] }>(`/api/records/${id}/audit`),
+  audit: (id: string, params?: { offset?: number; limit?: number }) => {
+    const search = new URLSearchParams();
+    if (params?.offset != null) search.set("offset", String(params.offset));
+    if (params?.limit != null) search.set("limit", String(params.limit));
+    const suffix = search.toString() ? `?${search}` : "";
+    return request<{ entries: AuditEntry[]; total: number }>(`/api/records/${id}/audit${suffix}`);
+  },
   users: () =>
     request<{
       users: Array<User | { id: string; displayName: string; email: string }>;

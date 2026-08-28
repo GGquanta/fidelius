@@ -4,13 +4,18 @@ export function OtpBoxes({
   value,
   onChange,
   disabled,
+  invalid,
+  autoFocus,
 }: {
   value: string;
   onChange: (next: string) => void;
   disabled?: boolean;
+  invalid?: boolean;
+  autoFocus?: boolean;
 }) {
   const digits = Array.from({ length: 6 }, (_, i) => value[i] ?? "");
   const refs = useRef<Array<HTMLInputElement | null>>([]);
+  const focusIndex = Math.min(value.replace(/\D/g, "").length, 5);
 
   function setAt(index: number, char: string) {
     const next = digits.map((d, i) => (i === index ? char : d)).join("").replace(/\D/g, "").slice(0, 6);
@@ -18,7 +23,7 @@ export function OtpBoxes({
   }
 
   return (
-    <div className="flex gap-2">
+    <div className={`flex gap-2 ${invalid ? "fx-shake" : ""}`}>
       {digits.map((digit, index) => (
         <input
           key={index}
@@ -28,7 +33,9 @@ export function OtpBoxes({
           inputMode="numeric"
           maxLength={6}
           disabled={disabled}
+          autoFocus={Boolean(autoFocus && index === focusIndex)}
           value={digit}
+          aria-invalid={invalid || undefined}
           aria-label={`第 ${index + 1} 位验证码`}
           onChange={(event) => {
             const raw = event.target.value.replace(/\D/g, "");
@@ -51,7 +58,9 @@ export function OtpBoxes({
             onChange(pasted);
             refs.current[Math.min(pasted.length, 5)]?.focus();
           }}
-          className="h-12 min-w-0 flex-1 rounded-box border border-line-strong bg-surface text-center font-mono text-lg outline-none focus:border-accent"
+          className={`h-12 min-w-0 flex-1 rounded-box border bg-surface text-center font-mono text-lg outline-none focus:border-accent ${
+            invalid ? "border-danger" : "border-line-strong"
+          }`}
         />
       ))}
     </div>

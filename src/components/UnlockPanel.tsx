@@ -1,5 +1,6 @@
 import { LockSimple, LockSimpleOpen } from "@phosphor-icons/react";
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { useExitPresence } from "../fx";
 import { errorMessage, useSession } from "../session";
 import { Button } from "./Button";
 import { OtpBoxes } from "./OtpBoxes";
@@ -14,11 +15,13 @@ export function UnlockPanel({
   onToast: (text: string) => void;
 }) {
   const { doUnlock } = useSession();
+  const { shown, exiting } = useExitPresence(open, 280);
   const [mode, setMode] = useState<"totp" | "recovery">("totp");
   const [code, setCode] = useState("");
   const [recoveryCode, setRecoveryCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [shake, setShake] = useState(0);
   const [done, setDone] = useState(false);
   const submitted = useRef(false);
 
@@ -50,6 +53,7 @@ export function UnlockPanel({
     } catch (error) {
       submitted.current = false;
       setErr(errorMessage(error));
+      setShake((n) => n + 1);
     } finally {
       setBusy(false);
     }
@@ -61,14 +65,17 @@ export function UnlockPanel({
     }
   }, [code, open, mode]);
 
-  if (!open) return null;
+  if (!shown) return null;
 
   return (
-    <div className="fixed inset-0 z-30 grid place-items-center bg-ink/25 p-4" onClick={onClose}>
+    <div
+      className={`fx-overlay fixed inset-0 z-30 grid place-items-center bg-ink/25 p-4 ${exiting ? "is-exit" : ""}`}
+      onClick={onClose}
+    >
       <form
         onSubmit={(event) => void submit(event)}
         onClick={(event) => event.stopPropagation()}
-        className="rise w-[min(92vw,380px)] rounded-xl border border-line bg-surface p-6 shadow-elev-5"
+        className={`${exiting ? "fx-exit" : "rise"} w-[min(92vw,380px)] rounded-xl border border-line bg-surface p-6 shadow-elev-5`}
       >
         <div className="flex items-center gap-3">
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-tile bg-accent-soft text-accent">
@@ -87,16 +94,26 @@ export function UnlockPanel({
         </div>
         <div className="mt-6">
           {mode === "totp" ? (
-            <OtpBoxes value={code} onChange={setCode} disabled={busy || done} />
+            <OtpBoxes
+              key={shake}
+              value={code}
+              onChange={setCode}
+              disabled={busy || done}
+              invalid={Boolean(err)}
+              autoFocus
+            />
           ) : (
             <input
               value={recoveryCode}
               onChange={(event) => setRecoveryCode(event.target.value.toUpperCase())}
               placeholder="XXXX-XXXX"
               autoComplete="off"
+              autoFocus
               spellCheck={false}
               disabled={busy || done}
-              className="w-full rounded-box border border-line-strong bg-canvas px-3 py-2 font-mono text-sm outline-none focus:border-accent"
+              className={`w-full rounded-box border bg-canvas px-3 py-2 font-mono text-sm outline-none focus:border-accent ${
+                err ? "border-danger" : "border-line-strong"
+              }`}
             />
           )}
         </div>
@@ -104,7 +121,7 @@ export function UnlockPanel({
         {!done ? (
           <button
             type="button"
-            className="mt-4 text-sm text-muted hover:text-ink"
+            className="fx-hover mt-4 text-sm text-muted hover:text-ink"
             onClick={() => {
               setMode(mode === "totp" ? "recovery" : "totp");
               setErr("");
@@ -120,7 +137,8 @@ export function UnlockPanel({
           </Button>
           <Button
             type="submit"
-            disabled={busy || done || (mode === "totp" ? code.length !== 6 : !recoveryCode.trim())}
+            busy={busy}
+            disabled={done || (mode === "totp" ? code.length !== 6 : !recoveryCode.trim())}
           >
             开锁
           </Button>
@@ -133,24 +151,37 @@ export function UnlockPanel({
 export function SensitiveUnlock({ onToast }: { onToast: (text: string) => void }) {
   const { unlocked, doLock } = useSession();
   const [open, setOpen] = useState(false);
+  const [locking, setLocking] = useState(false);
 
   if (unlocked) {
     return (
-      <div className="mb-5 flex items-center justify-between gap-3 border-b border-line pb-4">
+      <div key="open" className="fx-unmask mb-5 flex items-center justify-between gap-3 border-b border-line pb-4">
         <p className="flex items-center gap-2 text-sm text-muted">
-          <LockSimpleOpen size={16} />
+          <LockSimpleOpen size={16} className="shrink-0 text-accent" />
           已开锁，离开本页会自动封存
         </p>
-        <button type="button" className="text-sm text-muted hover:text-ink" onClick={() => void doLock().then(() => onToast("已封存"))}>
+        <Button
+          type="button"
+          tone="peach"
+          busy={locking}
+          onClick={() => {
+            if (locking) return;
+            setLocking(true);
+            void doLock()
+              .then(() => onToast("已封存"))
+              .finally(() => setLocking(false));
+          }}
+        >
+          <LockSimple size={16} />
           封存
-        </button>
+        </Button>
       </div>
     );
   }
 
   return (
     <>
-      <div className="mb-5 flex items-center gap-3 rounded-box bg-peach-soft px-4 py-3">
+      <div key="sealed" className="mb-5 flex items-center gap-3 rounded-box bg-peach-soft px-4 py-3">
         <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-tile bg-surface text-peach-ink">
           <LockSimple size={16} />
         </span>

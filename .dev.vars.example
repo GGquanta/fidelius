@@ -1,2 +1,4 @@
 MASTER_KEY=replace-with-openssl-rand-base64-32
 BOOTSTRAP_ADMIN_EMAIL=admin@example.com
+# 本地测试：取消下一行注释后，验证码 000000 可通过全部 TOTP 校验。生产无效。
+# DEV_TOTP_BYPASS=1

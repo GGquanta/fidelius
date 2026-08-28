@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useExitPresence } from "../fx";
 
 export function Modal({
   open,
@@ -13,9 +14,10 @@ export function Modal({
   children: ReactNode;
 }) {
   const openedAt = useRef(0);
+  const { shown, exiting } = useExitPresence(open, 280);
 
   useEffect(() => {
-    if (!open) return;
+    if (!shown) return;
     openedAt.current = Date.now();
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -27,9 +29,9 @@ export function Modal({
       document.body.style.overflow = previous;
       document.removeEventListener("keydown", onKey);
     };
-  }, [open, onClose]);
+  }, [shown, onClose]);
 
-  if (!open) return null;
+  if (!shown) return null;
 
   function dismiss() {
     if (Date.now() - openedAt.current < 320) return;
@@ -38,7 +40,7 @@ export function Modal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4"
+      className={`fx-overlay fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4 ${exiting ? "is-exit" : ""}`}
       onClick={dismiss}
       role="presentation"
     >
@@ -47,7 +49,7 @@ export function Modal({
         aria-modal="true"
         aria-labelledby={labelledBy}
         onClick={(event) => event.stopPropagation()}
-        className="rise max-h-[min(88dvh,720px)] w-[min(92vw,420px)] overflow-y-auto rounded-xl border border-line bg-surface p-6 shadow-elev-5"
+        className={`${exiting ? "fx-exit" : "rise"} max-h-[min(88dvh,720px)] w-[min(92vw,420px)] overflow-y-auto rounded-xl border border-line bg-surface p-6 shadow-elev-5`}
       >
         {children}
       </div>

@@ -3,6 +3,7 @@ import { validateRecordInput } from "./templates";
 import {
   ApiError,
   AUDIT_LIMIT,
+  AUDIT_PAGE_SIZE,
   getJson,
   keys,
   nowIso,
@@ -255,10 +256,22 @@ export async function unshareRecord(env: Env, user: User, id: string, targetUser
   return metaOf(record, "owner");
 }
 
-export async function getAudit(env: Env, user: User, id: string) {
+export async function getAudit(
+  env: Env,
+  user: User,
+  id: string,
+  offset = 0,
+  limit = AUDIT_PAGE_SIZE,
+) {
   await getRecordForUser(env, user, id);
   const log = (await getJson<{ entries: AuditEntry[] }>(env.FIDELIUS, keys.audit(id))) ?? {
     entries: [],
   };
-  return log.entries.slice().reverse();
+  const all = log.entries.slice().reverse();
+  const start = Math.max(0, Math.floor(offset));
+  const size = Math.min(AUDIT_PAGE_SIZE, Math.max(1, Math.floor(limit)));
+  return {
+    entries: all.slice(start, start + size),
+    total: all.length,
+  };
 }

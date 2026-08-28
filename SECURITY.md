@@ -68,6 +68,10 @@ IV / nonce 每次加密重新随机生成，与密文一并存储。
 
 TOTP 允许当前窗口及前后各一个窗口（共约 90 秒），防止时钟偏移。
 
+## 本地开发旁路
+
+`.dev.vars` 中的 `DEV_TOTP_BYPASS` 仅供本机调试。变量非空且 `ENVIRONMENT` 不是 `production` 时，验证码 `000000` 视为通过，不计入失败锁定。不要写入 `wrangler.jsonc` 或生产 Dashboard。生产硬关闭：`ENVIRONMENT=production` 时忽略该变量。
+
 ## 审计
 
 记录级日志最近 100 条，字段：

@@ -253,7 +253,7 @@ export function ProfilePanel({ open, onClose }: { open: boolean; onClose: () => 
                 <Button type="button" tone="tertiary" onClick={onClose}>
                   取消
                 </Button>
-                <Button type="submit" disabled={busy || !name.trim() || name.trim() === user.displayName}>
+                <Button type="submit" busy={busy} disabled={!name.trim() || name.trim() === user.displayName}>
                   保存
                 </Button>
               </div>
@@ -269,7 +269,7 @@ export function ProfilePanel({ open, onClose }: { open: boolean; onClose: () => 
             >
               <div className="mt-6">
                 {mode === "totp" ? (
-                  <OtpBoxes value={code} onChange={setCode} disabled={busy} />
+                  <OtpBoxes value={code} onChange={setCode} disabled={busy} invalid={Boolean(err)} />
                 ) : (
                   <input
                     value={recoveryCode}
@@ -284,7 +284,7 @@ export function ProfilePanel({ open, onClose }: { open: boolean; onClose: () => 
               </div>
               <button
                 type="button"
-                className="mt-4 text-sm text-muted hover:text-ink"
+                className="fx-hover mt-4 text-sm text-muted hover:text-ink"
                 onClick={() => {
                   setMode(mode === "totp" ? "recovery" : "totp");
                   setErr("");
@@ -310,7 +310,8 @@ export function ProfilePanel({ open, onClose }: { open: boolean; onClose: () => 
                 </Button>
                 <Button
                   type="submit"
-                  disabled={busy || (mode === "totp" ? code.length !== 6 : !recoveryCode.trim())}
+                  busy={busy}
+                  disabled={mode === "totp" ? code.length !== 6 : !recoveryCode.trim()}
                 >
                   继续
                 </Button>
@@ -323,11 +324,11 @@ export function ProfilePanel({ open, onClose }: { open: boolean; onClose: () => 
               {qr ? (
                 <img src={qr} alt="验证器二维码" className="mt-6 h-44 w-44 rounded-tile bg-canvas p-2" />
               ) : (
-                <div className="mt-6 h-44 w-44 rounded-tile bg-hover" />
+                <div className="fx-shimmer mt-6 h-44 w-44 rounded-tile" />
               )}
               <p className="mt-4 break-all font-mono text-xs text-tertiary">{secret}</p>
               <p className="mt-5 mb-3 text-[12px] text-muted">验证码</p>
-              <OtpBoxes value={code} onChange={setCode} disabled={busy} />
+              <OtpBoxes value={code} onChange={setCode} disabled={busy} invalid={Boolean(err)} />
               {err ? <p className="mt-3 text-sm text-danger">{err}</p> : null}
               <div className="mt-6 flex justify-end gap-3">
                 <Button
@@ -344,7 +345,7 @@ export function ProfilePanel({ open, onClose }: { open: boolean; onClose: () => 
                 >
                   返回
                 </Button>
-                <Button type="submit" disabled={busy || code.length !== 6}>
+                <Button type="submit" busy={busy} disabled={code.length !== 6}>
                   完成绑定
                 </Button>
               </div>
@@ -354,7 +355,7 @@ export function ProfilePanel({ open, onClose }: { open: boolean; onClose: () => 
           {step === "issue" ? (
             <form onSubmit={(event) => void issueCodes(event)}>
               <div className="mt-6">
-                <OtpBoxes value={code} onChange={setCode} disabled={busy} />
+                <OtpBoxes value={code} onChange={setCode} disabled={busy} invalid={Boolean(err)} />
               </div>
               {err ? <p className="mt-3 text-sm text-danger">{err}</p> : null}
               <div className="mt-6 flex justify-end gap-3">
@@ -370,7 +371,7 @@ export function ProfilePanel({ open, onClose }: { open: boolean; onClose: () => 
                 >
                   返回
                 </Button>
-                <Button type="submit" disabled={busy || code.length !== 6}>
+                <Button type="submit" busy={busy} disabled={code.length !== 6}>
                   {recoveryRemaining > 0 ? "重新生成恢复码" : "生成恢复码"}
                 </Button>
               </div>

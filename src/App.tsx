@@ -1,7 +1,7 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { createBrowserRouter, Navigate, Outlet, RouterProvider } from "react-router-dom";
 import { AppShell } from "./components/AppShell";
 import { DashboardPage } from "./pages/Dashboard";
-import { EnrollPage, GatePage } from "./pages/Gate";
+import { EnrollPage, GatePage, SessionLoading } from "./pages/Gate";
 import { RecordDetailPage } from "./pages/RecordDetail";
 import { RecordFormPage } from "./pages/RecordForm";
 import { UsersPage } from "./pages/Users";
@@ -9,11 +9,16 @@ import { VaultPage } from "./pages/Vault";
 import { SessionProvider, useSession } from "./session";
 import { ToastHost } from "./ui";
 
+function UsersGate() {
+  const { user } = useSession();
+  return user?.role === "admin" ? <UsersPage /> : <Navigate to="/" replace />;
+}
+
 function Shell() {
   const { code, user, error } = useSession();
 
   if (code === "loading") {
-    return <main className="mesh-glow grid min-h-[100dvh] place-items-center text-muted">加载中</main>;
+    return <SessionLoading />;
   }
   if (error) {
     return <GatePage title="无法连接" body={error} />;
@@ -30,27 +35,37 @@ function Shell() {
 
   return (
     <AppShell>
-      <Routes>
-        <Route path="/" element={<DashboardPage />} />
-        <Route path="/vault" element={<VaultPage />} />
-        <Route path="/new" element={<RecordFormPage />} />
-        <Route path="/records/:id" element={<RecordDetailPage />} />
-        <Route path="/records/:id/edit" element={<RecordFormPage />} />
-        <Route path="/users" element={user?.role === "admin" ? <UsersPage /> : <Navigate to="/" />} />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
+      <Outlet />
     </AppShell>
   );
 }
 
-export function App() {
+function Root() {
   return (
     <SessionProvider>
       <ToastHost>
-        <BrowserRouter>
-          <Shell />
-        </BrowserRouter>
+        <Shell />
       </ToastHost>
     </SessionProvider>
   );
+}
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Root />,
+    children: [
+      { index: true, element: <DashboardPage /> },
+      { path: "vault", element: <VaultPage /> },
+      { path: "new", element: <RecordFormPage /> },
+      { path: "records/:id", element: <RecordDetailPage /> },
+      { path: "records/:id/edit", element: <RecordFormPage /> },
+      { path: "users", element: <UsersGate /> },
+      { path: "*", element: <Navigate to="/" replace /> },
+    ],
+  },
+]);
+
+export function App() {
+  return <RouterProvider router={router} />;
 }

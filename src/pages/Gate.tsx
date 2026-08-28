@@ -15,7 +15,9 @@ export function EnrollPage() {
   const [code, setCode] = useState("");
   const [codes, setCodes] = useState<string[]>([]);
   const [err, setErr] = useState("");
+  const [shake, setShake] = useState(0);
   const [busy, setBusy] = useState(false);
+  const saved = codes.length > 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -37,6 +39,7 @@ export function EnrollPage() {
 
   async function confirm(event: FormEvent) {
     event.preventDefault();
+    if (busy) return;
     setBusy(true);
     setErr("");
     try {
@@ -44,60 +47,54 @@ export function EnrollPage() {
       setCodes(result.recoveryCodes);
     } catch (error) {
       setErr(errorMessage(error));
+      setShake((n) => n + 1);
     } finally {
       setBusy(false);
     }
   }
 
-  if (codes.length > 0) {
-    return (
-      <main className="mesh-glow relative min-h-[100dvh] overflow-hidden">
-        <div className="rise mx-auto grid min-h-[100dvh] max-w-4xl items-center gap-10 px-6 py-16 md:grid-cols-2">
-          <div>
-            <SealMark size={40} />
-            <h1 className="font-display mt-6 text-4xl tracking-tight">保存恢复码</h1>
-            <p className="mt-3 max-w-[42ch] text-muted">
-              请下载或复制这 10 条恢复码，放到离线安全的地方。之后无法再查看明文。
-            </p>
-          </div>
-          <div className="rounded-xl border border-line bg-surface p-6 shadow-elev-3">
+  return (
+    <main className="mesh-glow relative min-h-[100dvh] overflow-hidden">
+      <div className="mx-auto grid min-h-[100dvh] max-w-4xl items-center gap-10 px-6 py-16 md:grid-cols-2">
+        <div>
+          <SealMark size={40} />
+          <h1 className="font-display mt-6 text-4xl tracking-tight">{saved ? "保存恢复码" : "绑定验证器"}</h1>
+          <p className="mt-3 max-w-[42ch] text-muted">
+            {saved
+              ? "请下载或复制这 10 条恢复码，放到离线安全的地方。之后无法再查看明文。"
+              : "用验证器扫描二维码，或手动输入密钥，然后填写当前 6 位验证码。"}
+          </p>
+        </div>
+        <div key={saved ? "codes" : "qr"} className="rise rounded-xl border border-line bg-surface p-6 shadow-elev-3">
+          {saved ? (
             <RecoveryCodesCard
               email={user?.email ?? ""}
               codes={codes}
               savedLabel="已保存"
               onSaved={() => void refresh()}
             />
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  return (
-    <main className="mesh-glow relative min-h-[100dvh] overflow-hidden">
-      <div className="rise mx-auto grid min-h-[100dvh] max-w-4xl items-center gap-10 px-6 py-16 md:grid-cols-2">
-        <div>
-          <SealMark size={40} />
-          <h1 className="font-display mt-6 text-4xl tracking-tight">绑定验证器</h1>
-          <p className="mt-3 max-w-[42ch] text-muted">
-            用验证器扫描二维码，或手动输入密钥，然后填写当前 6 位验证码。
-          </p>
-        </div>
-        <div className="rounded-xl border border-line bg-surface p-6 shadow-elev-3">
-          {qr ? (
-            <img src={qr} alt="验证器二维码" className="h-44 w-44 rounded-tile bg-canvas p-2" />
           ) : (
-            <div className="h-44 w-44 rounded-tile bg-hover" />
+            <>
+              {qr ? (
+                <img src={qr} alt="验证器二维码" className="h-44 w-44 rounded-tile bg-canvas p-2" />
+              ) : (
+                <div className="fx-shimmer h-44 w-44 rounded-tile" />
+              )}
+              {secret || otpauth ? (
+                <p className="mt-4 break-all font-mono text-xs text-tertiary">{secret || otpauth}</p>
+              ) : (
+                <span className="fx-shimmer mt-4 block h-3 w-full rounded-sm" aria-hidden />
+              )}
+              <form onSubmit={(event) => void confirm(event)} className="mt-6">
+                <p className="mb-3 text-xs text-muted">验证码</p>
+                <OtpBoxes key={shake} value={code} onChange={setCode} disabled={busy} invalid={Boolean(err)} />
+                {err ? <p className="mt-3 text-sm text-danger">{err}</p> : null}
+                <Button type="submit" busy={busy} disabled={code.length !== 6} className="mt-6">
+                  继续
+                </Button>
+              </form>
+            </>
           )}
-          <p className="mt-4 break-all font-mono text-xs text-tertiary">{secret || otpauth}</p>
-          <form onSubmit={(event) => void confirm(event)} className="mt-6">
-            <p className="mb-3 text-xs text-muted">验证码</p>
-            <OtpBoxes value={code} onChange={setCode} disabled={busy} />
-            {err ? <p className="mt-3 text-sm text-danger">{err}</p> : null}
-            <Button type="submit" disabled={busy || code.length !== 6} className="mt-6">
-              继续
-            </Button>
-          </form>
         </div>
       </div>
     </main>
@@ -113,9 +110,23 @@ export function GatePage({
 }) {
   return (
     <main className="mesh-glow mx-auto flex min-h-[100dvh] max-w-lg flex-col justify-center px-6">
+      <div className="rise">
+        <SealMark size={40} />
+        <h1 className="font-display mt-6 text-4xl tracking-tight">{title}</h1>
+        <p className="mt-3 text-muted">{body}</p>
+      </div>
+    </main>
+  );
+}
+
+export function SessionLoading() {
+  return (
+    <main className="mesh-glow mx-auto flex min-h-[100dvh] max-w-lg flex-col justify-center px-6" aria-busy="true">
+      <span className="sr-only">加载中</span>
       <SealMark size={40} />
-      <h1 className="font-display mt-6 text-4xl tracking-tight">{title}</h1>
-      <p className="mt-3 text-muted">{body}</p>
+      <span className="fx-shimmer mt-6 block h-10 w-48 rounded-md" aria-hidden />
+      <span className="fx-shimmer mt-4 block h-4 w-72 max-w-full rounded-sm" aria-hidden />
+      <span className="fx-shimmer mt-2 block h-4 w-56 max-w-full rounded-sm" aria-hidden />
     </main>
   );
 }

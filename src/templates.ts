@@ -33,6 +33,20 @@ export const CATEGORY_LABEL: Record<Category, string> = {
   generic: "通用",
 };
 
+export const EMPTY_COPY: Record<Category | "all", string> = {
+  all: "还没有任何记录。按分类保存服务器、证书、密钥和登录账号。",
+  server: "还没有服务器记录。保存 SSH、RDP、SFTP 等主机的账号、密码和私钥。",
+  database: "还没有数据库记录。保存引擎、主机、库名、账号和连接密码。",
+  ssl: "还没有证书记录。保存站点证书、私钥和证书链。",
+  apikey: "还没有 API 密钥记录。保存服务商签发的密钥、令牌和权限范围。",
+  login: "还没有登录账号。保存网站或应用的账号、密码和恢复码。",
+  cloud: "还没有云平台记录。保存控制台登录、访问密钥和 MFA 恢复码。",
+  domain: "还没有域名记录。保存注册商、DNS 账号和解析令牌。",
+  network: "还没有网络设备记录。保存路由器、Wi-Fi 和 VPN 的密码与配置。",
+  recovery: "还没有恢复码记录。保存各服务签发的一次性恢复码。",
+  generic: "还没有通用记录。没有对应分类时，用自定义字段保存其他敏感信息。",
+};
+
 export const TEMPLATE_HINT: Record<Category, string> = {
   server: "填写主机、端口、账号和密钥。",
   database: "填写引擎、主机、数据库名和密码。",
@@ -134,6 +148,18 @@ export const TEMPLATES: Record<Category, TemplateField[]> = {
 
 export function fieldsFromTemplate(category: Category): RecordField[] {
   return TEMPLATES[category].map((field) => ({ ...field, value: "" }));
+}
+
+export function parseCategoryParam(value: string | null): Category {
+  if (value && value in CATEGORY_LABEL) return value as Category;
+  return "generic";
+}
+
+export function newRecordPath(category?: Category | "all" | null): string {
+  if (category && category !== "all" && category in CATEGORY_LABEL) {
+    return `/new?category=${category}`;
+  }
+  return "/new";
 }
 
 export function formatTime(iso: string): string {

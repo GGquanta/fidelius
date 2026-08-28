@@ -17,6 +17,8 @@ interface RecordField {
 
 ## 服务器密码 `server`
 
+用途：SSH、RDP、SFTP 等主机的账号、密码和私钥。
+
 | key | label | type | 校验 |
 | --- | --- | --- | --- |
 | host | 主机 | text | 必填 |
@@ -31,6 +33,8 @@ interface RecordField {
 
 ## 数据库 `database`
 
+用途：MySQL、Postgres、Redis 等数据库的连接账号、密码和连接字符串。
+
 | key | label | type | 校验 |
 | --- | --- | --- | --- |
 | engine | 引擎 | text | 必填 |
@@ -44,6 +48,8 @@ interface RecordField {
 
 ## SSL 证书 `ssl`
 
+用途：站点证书 PEM、私钥和证书链。
+
 | key | label | type | 校验 |
 | --- | --- | --- | --- |
 | domain | 域名 | text | 必填 |
@@ -53,6 +59,8 @@ interface RecordField {
 | not_after | 有效期 | text | 可选，ISO 日期 `YYYY-MM-DD` |
 
 ## API 密钥与令牌 `apikey`
+
+用途：第三方服务签发的 API 密钥、令牌和权限范围。
 
 | key | label | type | 校验 |
 | --- | --- | --- | --- |
@@ -66,6 +74,8 @@ interface RecordField {
 
 ## 登录账号 `login`
 
+用途：网站或应用的登录账号、密码和恢复码。
+
 | key | label | type | 校验 |
 | --- | --- | --- | --- |
 | site | 网站或应用 | text | 必填 |
@@ -75,6 +85,8 @@ interface RecordField {
 | recovery | 恢复码 | multiline | 可选 |
 
 ## 云平台账号 `cloud`
+
+用途：云控制台登录、访问密钥和 MFA 恢复码。
 
 | key | label | type | 校验 |
 | --- | --- | --- | --- |
@@ -91,6 +103,8 @@ interface RecordField {
 
 ## 域名与 DNS `domain`
 
+用途：域名注册商、DNS 服务商账号和解析令牌。
+
 | key | label | type | 校验 |
 | --- | --- | --- | --- |
 | domain | 域名 | text | 必填，须含 `.` |
@@ -104,6 +118,8 @@ interface RecordField {
 | notes | 备注 | multiline | 可选 |
 
 ## 网络设备与 Wi-Fi `network`
+
+用途：路由器、Wi-Fi 和 VPN 的管理密码与配置。
 
 | key | label | type | 校验 |
 | --- | --- | --- | --- |
@@ -121,6 +137,8 @@ interface RecordField {
 
 ## 恢复码与备份码 `recovery`
 
+用途：各服务签发的一次性恢复码。
+
 | key | label | type | 校验 |
 | --- | --- | --- | --- |
 | service | 服务名称 | text | 必填 |
@@ -131,5 +149,7 @@ interface RecordField {
 | notes | 备注 | multiline | 可选 |
 
 ## 通用 `generic`
+
+用途：没有对应分类时，用自定义字段保存其他敏感信息。
 
 无预设字段。至少 1 个自定义字段。`key` 只能是小写字母、数字、下划线，不以数字开头。

@@ -562,4 +562,59 @@ describe("fidelius api", () => {
     const me = await json("/api/me", { headers: headers(ADMIN) });
     expect(me.body.recoveryRemaining).toBe(9);
   });
+
+  it("pages audit entries ten at a time", async () => {
+    await enroll(ADMIN);
+    const fields = [
+      { key: "site", label: "网站或应用", type: "text", value: "intranet" },
+      { key: "username", label: "账号", type: "text", value: "apollo" },
+      { key: "password", label: "密码", type: "secret", value: "test-password-not-real" },
+    ];
+    const created = await json("/api/records", {
+      method: "POST",
+      headers: headers(ADMIN),
+      body: JSON.stringify({
+        title: "jump-host-audit",
+        description: "lab gateway",
+        category: "login",
+        fields,
+      }),
+    });
+    expect(created.res.status).toBe(201);
+    const record = created.body.record as { id: string };
+    for (let i = 0; i < 12; i++) {
+      const patch = await json(`/api/records/${record.id}`, {
+        method: "PATCH",
+        headers: headers(ADMIN),
+        body: JSON.stringify({
+          title: "jump-host-audit",
+          description: `lab gateway ${i}`,
+          category: "login",
+          fields,
+        }),
+      });
+      expect(patch.res.status).toBe(200);
+    }
+
+    const first = await json(`/api/records/${record.id}/audit`, { headers: headers(ADMIN) });
+    expect(first.res.status).toBe(200);
+    const firstEntries = first.body.entries as Array<{ action: string }>;
+    expect(firstEntries).toHaveLength(10);
+    expect(first.body.total).toBe(13);
+    expect(firstEntries[0].action).toBe("update");
+
+    const second = await json(`/api/records/${record.id}/audit?offset=10`, { headers: headers(ADMIN) });
+    expect(second.res.status).toBe(200);
+    const secondEntries = second.body.entries as Array<{ action: string }>;
+    expect(secondEntries).toHaveLength(3);
+    expect(second.body.total).toBe(13);
+    expect(secondEntries[secondEntries.length - 1].action).toBe("create");
+
+    const capped = await json(`/api/records/${record.id}/audit?limit=50`, { headers: headers(ADMIN) });
+    expect((capped.body.entries as unknown[]).length).toBe(10);
+
+    const bad = await json(`/api/records/${record.id}/audit?offset=-1`, { headers: headers(ADMIN) });
+    expect(bad.res.status).toBe(400);
+    expect(bad.body.code).toBe("validation");
+  });
 });

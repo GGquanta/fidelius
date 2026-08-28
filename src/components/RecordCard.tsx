@@ -9,7 +9,8 @@ export function RecordCard({ record, flush }: { record: RecordMeta; flush?: bool
   return (
     <Link
       to={`/records/${record.id}`}
-      className={`relative block overflow-hidden rounded-lg border border-line p-4 ${
+      viewTransition
+      className={`fx-hover relative block overflow-hidden rounded-lg border border-line p-4 ${
         flush ? "bg-canvas shadow-none hover:bg-hover" : "bg-surface shadow-elev-1 hover:bg-hover"
       }`}
       style={{ ["--ear" as string]: tone.soft }}

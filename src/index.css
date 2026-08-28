@@ -134,6 +134,13 @@
   --cat-all: var(--ink);
   --cat-all-soft: var(--hover);
   --cat-all-ink: var(--ink);
+
+  /* Motion: Design Spells / Linear / View Transitions. One ease, four durations. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-press: 120ms;
+  --dur-hover: 180ms;
+  --dur-enter: 280ms;
+  --dur-ceremony: 420ms;
 }
 
 .dark {
@@ -302,13 +309,6 @@ body {
   font-family: var(--font-sans);
   font-feature-settings: "ss01" 1;
   letter-spacing: -0.011em;
-}
-
-button,
-input,
-textarea,
-select {
-  font: inherit;
 }
 
 button {
@@ -517,6 +517,10 @@ button {
   color: var(--muted);
   white-space: nowrap;
   outline: none;
+  transition:
+    color var(--dur-hover) var(--ease-out),
+    background-color var(--dur-hover) var(--ease-out),
+    border-color var(--dur-hover) var(--ease-out);
 }
 
 .folder-tab:focus-visible {
@@ -599,6 +603,20 @@ html.dark .folder-tab.is-active:hover {
   gap: var(--space-3);
 }
 
+.side-tree-clip {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--dur-hover) var(--ease-out);
+}
+
+.side-tree-clip.is-open {
+  grid-template-rows: 1fr;
+}
+
+.side-tree-clip > * {
+  overflow: hidden;
+}
+
 .side-tree {
   display: flex;
   flex-direction: column;
@@ -606,6 +624,20 @@ html.dark .folder-tab.is-active:hover {
   margin: var(--space-2) 0 0 22px;
   padding: var(--space-1) 0 var(--space-1) 12px;
   border-left: 1px solid var(--line);
+}
+
+.side-caret {
+  transition: transform var(--dur-hover) var(--ease-out);
+}
+
+.side-caret.is-open {
+  transform: rotate(90deg);
+}
+
+.side-hit {
+  transition:
+    color var(--dur-hover) var(--ease-out),
+    background-color var(--dur-hover) var(--ease-out);
 }
 
 .side-hit:hover {
@@ -628,6 +660,119 @@ html.dark .side-hit:hover {
   pointer-events: none;
 }
 
+.vt-sidebar {
+  view-transition-name: sidebar;
+}
+
+.vt-paper {
+  view-transition-name: paper;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(sidebar),
+::view-transition-new(sidebar) {
+  animation: none;
+}
+
+::view-transition-old(paper) {
+  animation: vt-paper-out var(--dur-enter) var(--ease-out) both;
+}
+
+::view-transition-new(paper) {
+  animation: vt-paper-in var(--dur-enter) var(--ease-out) both;
+}
+
+@keyframes vt-paper-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-paper-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.fx-press,
+.fx-hover {
+  transition:
+    transform var(--dur-press) var(--ease-out),
+    color var(--dur-hover) var(--ease-out),
+    background-color var(--dur-hover) var(--ease-out),
+    background var(--dur-hover) var(--ease-out),
+    border-color var(--dur-hover) var(--ease-out),
+    box-shadow var(--dur-press) var(--ease-out),
+    opacity var(--dur-hover) var(--ease-out);
+}
+
+.fx-press:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.fx-overlay {
+  animation: overlay-in var(--dur-hover) var(--ease-out) both;
+}
+
+.fx-overlay.is-exit {
+  animation: overlay-out var(--dur-hover) var(--ease-out) both;
+}
+
+.fx-exit {
+  animation: exit var(--dur-enter) var(--ease-out) both;
+}
+
+.fx-shake {
+  animation: shake 200ms var(--ease-out);
+}
+
+.fx-unmask {
+  animation: unmask var(--dur-ceremony) var(--ease-out) both;
+}
+
+.fx-shimmer {
+  position: relative;
+  overflow: hidden;
+  background: var(--hover);
+}
+
+.fx-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--surface) 72%, transparent),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: shimmer 1.2s var(--ease-out) infinite;
+}
+
+.fx-spin {
+  animation: spin 700ms linear infinite;
+}
+
+.fx-copy {
+  display: inline-flex;
+  animation: copy-pulse var(--dur-press) var(--ease-out);
+}
+
+.fx-toast {
+  animation: toast-in var(--dur-enter) var(--ease-out) both;
+}
+
+.fx-toast.is-exit {
+  animation: toast-out var(--dur-hover) var(--ease-out) both;
+}
+
 @keyframes rise {
   from {
     opacity: 0;
@@ -636,6 +781,111 @@ html.dark .side-hit:hover {
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes overlay-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes exit {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-6px);
+  }
+  40% {
+    transform: translateX(6px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+@keyframes unmask {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+@keyframes shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@keyframes copy-pulse {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes toast-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, 8px);
   }
 }
 
@@ -672,7 +922,7 @@ html.dark .side-hit:hover {
 }
 
 .rise {
-  animation: rise 280ms ease;
+  animation: rise var(--dur-enter) var(--ease-out) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -681,5 +931,19 @@ html.dark .side-hit:hover {
   *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .fx-shimmer::after {
+    animation: none;
+  }
+
+  .fx-spin {
+    animation: none;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }

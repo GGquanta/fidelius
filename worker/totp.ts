@@ -94,3 +94,21 @@ export async function verifyTotp(secretBase32: string, code: string): Promise<bo
   }
   return false;
 }
+
+export const DEV_TOTP_BYPASS_CODE = "000000";
+
+export function isDevTotpBypass(env: Env, code: string): boolean {
+  if (String(env.ENVIRONMENT) === "production") return false;
+  const flag = String((env as unknown as Record<string, unknown>).DEV_TOTP_BYPASS ?? "").trim();
+  if (!flag) return false;
+  return code.trim() === DEV_TOTP_BYPASS_CODE;
+}
+
+export async function verifyTotpOrBypass(
+  env: Env,
+  secretBase32: string,
+  code: string,
+): Promise<boolean> {
+  if (isDevTotpBypass(env, code)) return true;
+  return verifyTotp(secretBase32, code);
+}

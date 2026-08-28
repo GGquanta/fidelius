@@ -1,4 +1,4 @@
-import { PencilSimple, Trash } from "@phosphor-icons/react";
+import { Edit, Trash } from "reicon-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api, type RecordMeta, type RevealedRecord } from "../api";
@@ -125,7 +125,7 @@ export function RecordDetailPage() {
           {owner ? (
             <div className="flex shrink-0 items-center gap-2 sm:pt-1">
               <ButtonLink to={`/records/${id}/edit`} tone="accent" viewTransition>
-                <PencilSimple size={16} />
+                <Edit size={16} />
                 编辑
               </ButtonLink>
               <Button type="button" tone="danger-soft" onClick={() => setConfirmDelete(true)}>

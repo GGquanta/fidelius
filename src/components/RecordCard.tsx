@@ -1,4 +1,4 @@
-import { ShareNetwork } from "@phosphor-icons/react";
+import { Share3 } from "reicon-react";
 import { Link } from "react-router-dom";
 import type { RecordMeta } from "../api";
 import { CATEGORY_LABEL, formatTime } from "../templates";
@@ -30,7 +30,7 @@ export function RecordCard({ record, flush }: { record: RecordMeta; flush?: bool
           {CATEGORY_LABEL[record.category]}
         </span>
         {record.sharedWith.length > 0 && record.access === "owner" ? (
-          <ShareNetwork size={14} className="text-tertiary" />
+          <Share3 size={14} className="text-tertiary" />
         ) : null}
         <time className="ml-auto font-mono text-tertiary">{formatTime(record.updatedAt)}</time>
       </div>

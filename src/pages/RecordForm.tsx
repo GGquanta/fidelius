@@ -1,4 +1,4 @@
-import { LockSimple, Plus } from "@phosphor-icons/react";
+import { Lock, Plus } from "reicon-react";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { api, type Category, type RecordField } from "../api";
@@ -217,7 +217,7 @@ export function RecordFormPage() {
         {editing && !unlocked ? (
           <section className="mt-8">
             <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 rounded-xl bg-sunken px-10 py-16">
-              <LockSimple size={28} className="text-peach" />
+              <Lock size={28} className="text-peach" />
               <p className="max-w-[22em] text-center text-sm leading-relaxed text-muted">字段已封存。开锁后才能改。</p>
             </div>
           </section>

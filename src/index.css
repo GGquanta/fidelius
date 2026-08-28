@@ -1,12 +1,13 @@
 @import "@fontsource-variable/dm-sans";
 @import "@fontsource-variable/geist-mono";
 @import "@fontsource/imperial-script";
+@import "@fontsource/lato/latin-400.css";
 @import "tailwindcss";
 
 @font-face {
   font-family: "LXGW 975 Yuan SC";
   font-style: normal;
-  font-weight: 400 700;
+  font-weight: 400;
   font-display: swap;
   src: url("./fonts/lxgw-975-yuan-sc-400.woff2") format("woff2");
   unicode-range: U+2E80-2EFF, U+2FF0-2FFF, U+3000-303F, U+31C0-31EF, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF;
@@ -219,6 +220,7 @@
   --font-display: "DM Sans Variable", "LXGW 975 Yuan SC", ui-sans-serif, sans-serif;
   --font-script: "Imperial Script", "DM Sans Variable", cursive;
   --font-mono: "Geist Mono Variable", ui-monospace, monospace;
+  --font-metric: "Lato", ui-sans-serif, sans-serif;
   --color-canvas: var(--canvas);
   --color-surface: var(--surface);
   --color-hover: var(--hover);
@@ -336,7 +338,7 @@ button {
 }
 
 .font-metric {
-  font-family: var(--font-sans);
+  font-family: var(--font-metric);
   font-variant-numeric: tabular-nums lining-nums;
   font-feature-settings: "tnum" 1, "lnum" 1;
 }
@@ -612,15 +614,17 @@ html.dark .folder-tab.is-active:hover {
 
 .side-tree-clip {
   display: grid;
-  grid-template-rows: 0fr;
+  grid-template-rows: minmax(0, 0fr);
+  overflow: hidden;
   transition: grid-template-rows var(--dur-hover) var(--ease-out);
 }
 
 .side-tree-clip.is-open {
-  grid-template-rows: 1fr;
+  grid-template-rows: minmax(0, 1fr);
 }
 
 .side-tree-clip > * {
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -630,15 +634,6 @@ html.dark .folder-tab.is-active:hover {
   gap: var(--space-3);
   margin: var(--space-2) 0 0 22px;
   padding: var(--space-1) 0 var(--space-1) 12px;
-  border-left: 1px solid var(--line);
-}
-
-.side-caret {
-  transition: transform var(--dur-hover) var(--ease-out);
-}
-
-.side-caret.is-open {
-  transform: rotate(90deg);
 }
 
 .side-hit {
@@ -765,6 +760,11 @@ html.dark .side-hit:hover {
 
 .fx-spin {
   animation: spin 700ms linear infinite;
+}
+
+.reicon {
+  display: block;
+  flex-shrink: 0;
 }
 
 .fx-copy {

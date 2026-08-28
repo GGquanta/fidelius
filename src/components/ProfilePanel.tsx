@@ -1,4 +1,4 @@
-import { DeviceMobile } from "@phosphor-icons/react";
+import { Mobile } from "reicon-react";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { api } from "../api";
 import { errorMessage, useSession } from "../session";
@@ -167,7 +167,7 @@ export function ProfilePanel({ open, onClose }: { open: boolean; onClose: () => 
         <>
           <div className="flex items-center gap-3">
             <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-accent-soft text-sm text-accent-ink">
-              {step === "profile" ? user.displayName.slice(0, 1) : <DeviceMobile size={20} />}
+              {step === "profile" ? user.displayName.slice(0, 1) : <Mobile size={20} />}
             </span>
             <div>
               <h2 id="profile-title" className="text-base font-medium">

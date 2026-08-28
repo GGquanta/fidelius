@@ -148,25 +148,25 @@ interface VaultRecord {
 
 分类三元组（浅底 / 实心 / 浅底上的文字），颜色不是唯一信号：
 
-- 服务器 268° 紫罗兰 · HardDrives
+- 服务器 268° 紫罗兰 · HardDrive
 - 数据库 158° 薄荷 · Database
-- SSL 证书 205° 天青 · Certificate
+- SSL 证书 205° 天青 · AwardCertificate
 - API 密钥 42° 琥珀 · Code
 - 登录账号 338° 玫粉 · Fingerprint
 - 云平台 232° 靛蓝 · Cloud
 - 域名与 DNS 90° 青柠 · Globe
-- 网络 182° 蓝绿 · WifiHigh
+- 网络 182° 蓝绿 · Wifi
 - 恢复码 12° 珊瑚 · Lifebuoy
-- 通用 32° 暖石 · Cube
-- 全部 暖墨 · Vault
+- 通用 32° 暖石 · ThreeDCube
+- 全部 暖墨 · FolderOpen
 
 圆角随尺寸升档：8 / 12 / 18 / 26px。主按钮用 violet-500 → violet-600 垂直渐变 + inset 亮边。
 
 高度五档两段式，阴影色 `hsla(24, 20%, 13%, …)`，alpha `.04–.18`。
 
-字体：DM Sans Variable（拉丁）、霞鹜 975 圆体 SC 400（汉字，自托管 WOFF2）、Imperial Script（仅品牌字标「Fidelius」）、Geist Mono（秘密值、密钥、时间）。≥30px 展示标题同一套。指标数字用 DM Sans `tabular-nums`，含统计卡、分类条数、名额、图例与侧栏计数。字体一律自托管，禁止 `fonts.googleapis.com` / `fonts.gstatic.com`。
+字体：DM Sans Variable（拉丁）、霞鹜 975 圆体 SC 400（汉字，自托管 WOFF2）、Imperial Script（仅品牌字标「Fidelius」）、Lato（指标数字）、Geist Mono（秘密值、密钥、时间）。≥30px 展示标题同一套。指标数字用 Lato `tabular-nums`，只挂 `.font-metric`，含统计卡、分类条数、名额、图例与侧栏计数。字体一律自托管，禁止 `fonts.googleapis.com` / `fonts.gstatic.com`。
 
-图标：Phosphor Regular，导航 16px，瓷砖 20px。
+图标：Reicon Outline（`reicon-react`），导航 16px，瓷砖 20px。不要用 Lucide、Phosphor。
 
 字号只从 `12 14 16 18 20 24 30 36 48 60` 取值。两档字重 400 / 600。大数字只用于统计卡。
 
@@ -198,7 +198,7 @@ interface VaultRecord {
 
 - 顶：印记 30px（与 favicon 同源的角色透明图）+ 花体字标「Fidelius」（30px Imperial Script，violet-400 → violet-600 垂直短行程，紫罗兰 + 蜜桃辉光，四角星火花与细流线），与印记间距 24px，不是链接，无脚注、无分隔线。字标辉光与火花是印记装饰，不把粒子铺到导航。`prefers-reduced-motion` 时火花静止。文档标题为「Fidelius · 密钥保管库」
 - 工作台：概览
-- 保险库：可展开树。父行是「保险库」+ 总数 + 折页箭头；子项含「全部」与 10 个分类（20px 瓷砖、名称、计数），由左侧 1px 轨成树。子项行高 36px，左右内边距 12px，与父行同档，行距 12px。点选写入 `/vault?category=`。父行只负责展开/进入全部，不高亮成与子项抢权重。展开收起用 `grid-template-rows` 180ms，箭头旋转；不做交错飞入
+- 保险库：可展开树。父行是「保险库」+ 总数 + 折页箭头（展开 ChevronDown，收起 ChevronLeft）；子项含「全部」与 10 个分类（20px 瓷砖、名称、计数），相对父行左缩进，不要左侧竖轨。子项行高 36px，左右内边距 12px，与父行同档，行距 12px。点选写入 `/vault?category=`。父行只负责展开/进入全部，不高亮成与子项抢权重。展开收起用 `grid-template-rows` 180ms，收起时子项完全裁切；不做交错飞入
 - 侧栏未选中项 hover 用 ink 以 16% 混入透明底（暗色 20%），在毛玻璃上才能读出；不用 `--hover`（与 canvas 过近）。选中仍为 accent-soft。
 - admin 见团队
 - 底：用户卡可点（圆印、显示名、角色），打开个人资料面板；主题切换是卡上独立按钮，不打开面板。卡本身有边框，不是一条裸 footer
@@ -216,7 +216,7 @@ interface VaultRecord {
 数据全部由 `GET /api/records` 与 `GET /api/users` 在前端聚合，不新增聚合接口。
 
 - 问候 + 新建。记录列表未到时统计、图表、瓷砖计数与近更为骨架，不要把 `0` 或「暂无记录」当数据条目
-- 四张统计卡：全部 / 我的 / 他人分享 / 我分享的，DM Sans 48–60px tabular 数字
+- 四张统计卡：全部 / 我的 / 他人分享 / 我分享的，Lato 48–60px tabular 数字
 - 分类分布：横向堆叠条 + 图例（色块 + 名称 + 计数）
 - 分类瓷砖网格：跳 `/vault?category=`。每格是索引卡：左分类瓷砖 + 名称 + 最近更新（空则「暂无记录」），右 36px tabular 条数、竖直居中，不加单位。折角用分类浅底，横排占满格宽，不把元素撑到四角
 - 字段类型：text / secret / multiline 环形图（只读 `fieldMeta`）

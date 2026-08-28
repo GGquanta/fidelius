@@ -1,4 +1,4 @@
-import { Plus } from "@phosphor-icons/react";
+import { Plus } from "reicon-react";
 import { Link } from "react-router-dom";
 import { EMPTY_COPY, newRecordPath } from "../templates";
 import { CategoryIcon, type CategoryId } from "./CategoryIcon";

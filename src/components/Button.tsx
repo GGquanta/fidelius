@@ -1,4 +1,4 @@
-import { CircleNotch } from "@phosphor-icons/react";
+import { Loader } from "reicon-react";
 import type { ButtonHTMLAttributes, ComponentProps } from "react";
 import { Link } from "react-router-dom";
 
@@ -34,7 +34,7 @@ export function Button({
       aria-busy={busy || undefined}
       className={btnClass(tone, className)}
     >
-      {busy ? <CircleNotch size={16} className="fx-spin shrink-0" aria-hidden /> : null}
+      {busy ? <Loader size={16} className="fx-spin shrink-0" aria-hidden /> : null}
       {children}
     </button>
   );

@@ -1,4 +1,4 @@
-import { CaretDown, Check } from "@phosphor-icons/react";
+import { AngleDown, Check } from "reicon-react";
 import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 
@@ -149,7 +149,7 @@ export function Select({
         <span className={`min-w-0 flex-1 truncate ${selected ? "text-ink" : "text-tertiary"}`}>
           {selected?.label ?? placeholder}
         </span>
-        <CaretDown
+        <AngleDown
           size={14}
           className="shrink-0 text-tertiary"
           style={{

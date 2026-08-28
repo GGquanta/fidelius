@@ -1,4 +1,4 @@
-import { LockSimple, LockSimpleOpen } from "@phosphor-icons/react";
+import { Lock, LockOpen } from "reicon-react";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useExitPresence } from "../fx";
@@ -104,7 +104,7 @@ export function UnlockPanel({
       >
         <div className="flex items-center gap-3">
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-tile bg-accent-soft text-accent">
-            {done ? <LockSimpleOpen size={20} /> : <LockSimple size={20} />}
+            {done ? <LockOpen size={20} /> : <Lock size={20} />}
           </span>
           <div>
             <h2 id="unlock-title" className="text-base font-medium">
@@ -195,7 +195,7 @@ export function SensitiveUnlock({
     return (
       <div key="open" className="fx-unmask mb-5 flex items-center justify-between gap-3 border-b border-line pb-4">
         <p className="flex items-center gap-2 text-sm text-muted">
-          <LockSimpleOpen size={16} className="shrink-0 text-accent" />
+          <LockOpen size={16} className="shrink-0 text-accent" />
           已开锁，离开本页会自动封存
         </p>
         <Button
@@ -210,7 +210,7 @@ export function SensitiveUnlock({
               .finally(() => setLocking(false));
           }}
         >
-          <LockSimple size={16} />
+          <Lock size={16} />
           封存
         </Button>
       </div>
@@ -221,7 +221,7 @@ export function SensitiveUnlock({
     <>
       <div key="sealed" className="mb-5 flex items-center gap-3 rounded-box bg-peach-soft px-4 py-3">
         <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-tile bg-surface text-peach-ink">
-          <LockSimple size={16} />
+          <Lock size={16} />
         </span>
         <p className="min-w-0 flex-1 text-sm text-peach-ink">{sealedHint}</p>
         <Button type="button" onClick={() => setOpen(true)}>

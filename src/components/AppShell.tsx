@@ -1,12 +1,14 @@
 import {
   CaretRight,
-  MagnifyingGlass,
+  ChevronDown,
+  ChevronLeft,
+  Magnifier,
   Moon,
-  SquaresFour,
   Sun,
   Users,
   Vault,
-} from "@phosphor-icons/react";
+  Widget,
+} from "reicon-react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { NavLink, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api";
@@ -113,7 +115,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
           <p className="px-3 pb-2 text-[12px] tracking-[0.08em] text-tertiary">工作台</p>
           <NavLink to="/" end viewTransition className={({ isActive }) => itemClass(isActive)}>
-            <SquaresFour size={16} className="text-tertiary" />
+            <Widget size={16} className="text-tertiary" />
             概览
           </NavLink>
 
@@ -145,7 +147,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 aria-label={vaultOpen ? "收起分类" : "展开分类"}
                 onClick={() => setVaultOpen((open) => !open)}
               >
-                <CaretRight size={12} className={`side-caret ${vaultOpen ? "is-open" : ""}`} />
+                {vaultOpen ? <ChevronDown size={16} /> : <ChevronLeft size={16} />}
               </button>
             </div>
             <div className={`side-tree-clip ${vaultOpen ? "is-open" : ""}`} inert={!vaultOpen || undefined}>
@@ -220,7 +222,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-h-0 min-w-0 flex-col">
         <header className="flex h-16 shrink-0 items-center border-b border-line bg-surface px-6">
           <form onSubmit={search} className="relative w-full max-w-xl">
-            <MagnifyingGlass size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-tertiary" />
+            <Magnifier size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-tertiary" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}

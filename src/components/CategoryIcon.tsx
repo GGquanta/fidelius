@@ -1,27 +1,28 @@
 import {
-  Certificate,
+  AwardCertificate,
   Cloud,
   Code,
-  Cube,
   Database,
   Fingerprint,
+  FolderOpen,
   Globe,
-  HardDrives,
+  HardDrive,
   Lifebuoy,
-  Vault,
-  WifiHigh,
-} from "@phosphor-icons/react";
+  ThreeDCube,
+  Wifi,
+  type IconComponent,
+} from "reicon-react";
 import type { Category } from "../api";
 
 export type CategoryId = Category | "all";
 
 const META: Record<
   CategoryId,
-  { icon: typeof Vault; color: string; soft: string; ink: string }
+  { icon: IconComponent; color: string; soft: string; ink: string }
 > = {
-  all: { icon: Vault, color: "var(--cat-all)", soft: "var(--cat-all-soft)", ink: "var(--cat-all-ink)" },
+  all: { icon: FolderOpen, color: "var(--cat-all)", soft: "var(--cat-all-soft)", ink: "var(--cat-all-ink)" },
   server: {
-    icon: HardDrives,
+    icon: HardDrive,
     color: "var(--cat-server)",
     soft: "var(--cat-server-soft)",
     ink: "var(--cat-server-ink)",
@@ -32,7 +33,7 @@ const META: Record<
     soft: "var(--cat-database-soft)",
     ink: "var(--cat-database-ink)",
   },
-  ssl: { icon: Certificate, color: "var(--cat-ssl)", soft: "var(--cat-ssl-soft)", ink: "var(--cat-ssl-ink)" },
+  ssl: { icon: AwardCertificate, color: "var(--cat-ssl)", soft: "var(--cat-ssl-soft)", ink: "var(--cat-ssl-ink)" },
   apikey: { icon: Code, color: "var(--cat-apikey)", soft: "var(--cat-apikey-soft)", ink: "var(--cat-apikey-ink)" },
   login: {
     icon: Fingerprint,
@@ -43,7 +44,7 @@ const META: Record<
   cloud: { icon: Cloud, color: "var(--cat-cloud)", soft: "var(--cat-cloud-soft)", ink: "var(--cat-cloud-ink)" },
   domain: { icon: Globe, color: "var(--cat-domain)", soft: "var(--cat-domain-soft)", ink: "var(--cat-domain-ink)" },
   network: {
-    icon: WifiHigh,
+    icon: Wifi,
     color: "var(--cat-network)",
     soft: "var(--cat-network-soft)",
     ink: "var(--cat-network-ink)",
@@ -54,7 +55,7 @@ const META: Record<
     soft: "var(--cat-recovery-soft)",
     ink: "var(--cat-recovery-ink)",
   },
-  generic: { icon: Cube, color: "var(--cat-generic)", soft: "var(--cat-generic-soft)", ink: "var(--cat-generic-ink)" },
+  generic: { icon: ThreeDCube, color: "var(--cat-generic)", soft: "var(--cat-generic-soft)", ink: "var(--cat-generic-ink)" },
 };
 
 export function CategoryIcon({

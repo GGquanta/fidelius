@@ -1,4 +1,4 @@
-import { ArrowLeft } from "@phosphor-icons/react";
+import { ArrowLeft } from "reicon-react";
 import { Link } from "react-router-dom";
 
 export function BackLink({ to, label }: { to: string; label: string }) {

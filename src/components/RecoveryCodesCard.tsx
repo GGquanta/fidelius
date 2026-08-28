@@ -1,4 +1,4 @@
-import { Check, Copy, DownloadSimple, Lifebuoy } from "@phosphor-icons/react";
+import { Check, Copy, Download, Lifebuoy } from "reicon-react";
 import { useState } from "react";
 import { Button } from "./Button";
 
@@ -62,7 +62,7 @@ export function RecoveryCodesCard({
       </ol>
       <div className="mt-6 flex flex-wrap justify-end gap-3">
         <Button type="button" tone="secondary" onClick={() => downloadCodes(email, codes)}>
-          <DownloadSimple size={16} />
+          <Download size={16} />
           下载
         </Button>
         <Button type="button" tone="secondary" onClick={() => void copy()}>

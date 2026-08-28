@@ -1,4 +1,4 @@
-import { Check, Copy, DownloadSimple } from "@phosphor-icons/react";
+import { Check, Copy, Download } from "reicon-react";
 import { useState } from "react";
 import type { RecordField } from "../api";
 
@@ -49,7 +49,7 @@ export function FieldBlock({
                 className="fx-hover rounded-box p-1.5 text-muted hover:bg-hover hover:text-ink"
                 aria-label="下载"
               >
-                <DownloadSimple size={16} />
+                <Download size={16} />
               </button>
             ) : null}
           </div>

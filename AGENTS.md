@@ -22,7 +22,7 @@
 
 ## 设计禁区
 
-- 不要用 Inter、Lucide、emoji、营销套话、装饰衬线。品牌字标「Fidelius」可用花体 Imperial Script，仅此一处
+- 不要用 Inter、Lucide、Phosphor、emoji、营销套话、装饰衬线。图标用 Reicon Outline。品牌字标「Fidelius」可用花体 Imperial Script，仅此一处
 - 不要用左侧色条；分类色用折页、瓷砖、折角表达
 - 渐变只允许三种，色相行程 ≤40°，同一色阶内取两站：
  1. 主按钮：violet-500 → violet-600 垂直受光，配 inset 亮边

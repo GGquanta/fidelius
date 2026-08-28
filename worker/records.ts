@@ -84,7 +84,7 @@ export async function getRecordForUser(
   if (!record) throw new ApiError(404, "not_found", "记录不存在");
   if (record.ownerId === user.id) return { record, access: "owner" };
   if (record.sharedWith.includes(user.id)) return { record, access: "shared" };
-  throw new ApiError(403, "forbidden", "无权查看该记录");
+  throw new ApiError(403, "forbidden", "没有查看此记录的权限");
 }
 
 export async function createRecord(
@@ -142,7 +142,7 @@ export async function updateRecord(
   },
 ) {
   const { record, access } = await getRecordForUser(env, user, id);
-  if (access !== "owner") throw new ApiError(403, "forbidden", "只有所有者可以修改");
+  if (access !== "owner") throw new ApiError(403, "forbidden", "仅所有者可修改");
   const fields = validateRecordInput(input.category, input.title, input.fields);
   const master = await importMasterKey(env.MASTER_KEY);
   const secrets: Record<string, string> = {};
@@ -168,7 +168,7 @@ export async function updateRecord(
 
 export async function deleteRecord(env: Env, user: User, id: string): Promise<void> {
   const { record, access } = await getRecordForUser(env, user, id);
-  if (access !== "owner") throw new ApiError(403, "forbidden", "只有所有者可以删除");
+  if (access !== "owner") throw new ApiError(403, "forbidden", "仅所有者可删除");
   await env.FIDELIUS.delete(keys.record(id));
   await env.FIDELIUS.delete(keys.audit(id));
   const owned = await readIndex(env, keys.ownerIndex(user.id));
@@ -209,11 +209,11 @@ export async function revealRecord(env: Env, user: User, id: string) {
 
 export async function shareRecord(env: Env, user: User, id: string, targetUserId: string) {
   const { record, access } = await getRecordForUser(env, user, id);
-  if (access !== "owner") throw new ApiError(403, "forbidden", "只有所有者可以分享");
+  if (access !== "owner") throw new ApiError(403, "forbidden", "仅所有者可分享");
   if (targetUserId === user.id) throw new ApiError(400, "validation", "不能分享给自己");
   const target = await getJson<User>(env.FIDELIUS, keys.user(targetUserId));
   if (!target || target.status !== "active") {
-    throw new ApiError(400, "validation", "只能分享给已编排用户");
+    throw new ApiError(400, "validation", "只能分享给已绑定验证器的成员");
   }
   if (!record.sharedWith.includes(targetUserId)) {
     record.sharedWith.push(targetUserId);
@@ -235,7 +235,7 @@ export async function shareRecord(env: Env, user: User, id: string, targetUserId
 
 export async function unshareRecord(env: Env, user: User, id: string, targetUserId: string) {
   const { record, access } = await getRecordForUser(env, user, id);
-  if (access !== "owner") throw new ApiError(403, "forbidden", "只有所有者可以收回分享");
+  if (access !== "owner") throw new ApiError(403, "forbidden", "仅所有者可收回分享");
   record.sharedWith = record.sharedWith.filter((sid) => sid !== targetUserId);
   record.updatedAt = nowIso();
   await putJson(env.FIDELIUS, keys.record(record.id), record);

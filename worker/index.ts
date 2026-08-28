@@ -23,6 +23,7 @@ import {
 } from "./types";
 import {
   confirmEnroll,
+  confirmResetEnroll,
   createUser,
   disableUser,
   getUnlockExpiresAt,
@@ -32,6 +33,7 @@ import {
   publicUser,
   resolveOrBootstrapUser,
   startEnroll,
+  startResetEnroll,
   unlock,
   updateDisplayName,
 } from "./users";
@@ -70,7 +72,7 @@ app.use("/api/*", async (c, next) => {
 
 function requireUser(c: { get: (key: "user") => User | null }): User {
   const user = c.get("user");
-  if (!user) throw new ApiError(403, "not_provisioned", "账号未开通，请联系管理员");
+  if (!user) throw new ApiError(403, "not_provisioned", "账号尚未开通，请联系管理员");
   if (user.status === "disabled") throw new ApiError(403, "disabled", "账号已停用");
   return user;
 }
@@ -78,7 +80,7 @@ function requireUser(c: { get: (key: "user") => User | null }): User {
 function requireActive(c: { get: (key: "user") => User | null }): User {
   const user = requireUser(c);
   if (user.status !== "active") {
-    throw new ApiError(403, "pending_enroll", "请先完成二步验证编排");
+    throw new ApiError(403, "pending_enroll", "请先绑定验证器");
   }
   return user;
 }
@@ -140,6 +142,21 @@ app.post("/api/enroll/confirm", async (c) => {
   const body = await c.req.json<{ code?: string }>();
   const updated = await confirmEnroll(c.env, user, body.code ?? "");
   return c.json({ user: publicUser(updated) });
+});
+
+app.post("/api/enroll/reset/start", async (c) => {
+  const user = requireActive(c);
+  const body = await c.req.json<{ code?: string }>();
+  const result = await startResetEnroll(c.env, user, body.code ?? "");
+  return c.json(result);
+});
+
+app.post("/api/enroll/reset/confirm", async (c) => {
+  const user = requireActive(c);
+  const body = await c.req.json<{ code?: string }>();
+  const updated = await confirmResetEnroll(c.env, user, body.code ?? "");
+  deleteCookie(c, UNLOCK_COOKIE, { path: "/" });
+  return c.json({ user: publicUser(updated), unlocked: false });
 });
 
 app.post("/api/unlock", async (c) => {
@@ -234,7 +251,7 @@ app.post("/api/records/:id/reveal", async (c) => {
 app.post("/api/records/:id/share", async (c) => {
   const user = requireActive(c);
   const body = await c.req.json<{ userId?: string }>();
-  if (!body.userId) throw new ApiError(400, "validation", "缺少 userId");
+  if (!body.userId) throw new ApiError(400, "validation", "请选择要分享的成员");
   const record = await shareRecord(c.env, user, c.req.param("id"), body.userId);
   return c.json({ record });
 });

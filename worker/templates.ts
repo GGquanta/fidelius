@@ -9,11 +9,11 @@ export interface TemplateField {
 }
 
 export const CATEGORY_LABELS: Record<Category, string> = {
-  server: "服务器密码",
+  server: "服务器账号",
   database: "数据库",
-  ssl: "SSL 密钥",
+  ssl: "SSL 证书",
   apikey: "API 密钥",
-  login: "用户登录密码",
+  login: "登录账号",
   cloud: "云平台账号",
   domain: "域名与 DNS",
   network: "网络设备",
@@ -35,10 +35,10 @@ export const TEMPLATES: Record<Category, TemplateField[]> = {
     { key: "engine", label: "引擎", type: "text", required: true },
     { key: "host", label: "主机", type: "text", required: true },
     { key: "port", label: "端口", type: "text" },
-    { key: "database", label: "库名", type: "text", required: true },
+    { key: "database", label: "数据库名", type: "text", required: true },
     { key: "username", label: "用户名", type: "text", required: true },
     { key: "password", label: "密码", type: "secret", required: true },
-    { key: "conn_uri", label: "连接串", type: "secret" },
+    { key: "conn_uri", label: "连接字符串", type: "secret" },
     { key: "notes", label: "备注", type: "multiline" },
   ],
   ssl: [
@@ -53,19 +53,19 @@ export const TEMPLATES: Record<Category, TemplateField[]> = {
     { key: "key_id", label: "密钥 ID", type: "text" },
     { key: "secret_key", label: "密钥", type: "secret", required: true },
     { key: "scope", label: "权限范围", type: "text" },
-    { key: "expires_at", label: "到期日", type: "text" },
+    { key: "expires_at", label: "到期日期", type: "text" },
     { key: "endpoint", label: "接口地址", type: "text" },
     { key: "notes", label: "备注", type: "multiline" },
   ],
   login: [
-    { key: "site", label: "站点或应用", type: "text", required: true },
+    { key: "site", label: "网站或应用", type: "text", required: true },
     { key: "username", label: "账号", type: "text", required: true },
     { key: "password", label: "密码", type: "secret", required: true },
-    { key: "url", label: "登录 URL", type: "text" },
+    { key: "url", label: "登录地址", type: "text" },
     { key: "recovery", label: "恢复码", type: "multiline" },
   ],
   cloud: [
-    { key: "provider", label: "云厂商", type: "text", required: true },
+    { key: "provider", label: "云服务商", type: "text", required: true },
     { key: "account_id", label: "账号 ID", type: "text" },
     { key: "console_url", label: "控制台", type: "text" },
     { key: "username", label: "用户名", type: "text" },
@@ -82,7 +82,7 @@ export const TEMPLATES: Record<Category, TemplateField[]> = {
     { key: "password", label: "密码", type: "secret" },
     { key: "dns_provider", label: "DNS 服务商", type: "text" },
     { key: "api_token", label: "API 令牌", type: "secret" },
-    { key: "expires_at", label: "到期日", type: "text" },
+    { key: "expires_at", label: "到期日期", type: "text" },
     { key: "notes", label: "备注", type: "multiline" },
   ],
   network: [
@@ -97,11 +97,11 @@ export const TEMPLATES: Record<Category, TemplateField[]> = {
     { key: "notes", label: "备注", type: "multiline" },
   ],
   recovery: [
-    { key: "service", label: "服务", type: "text", required: true },
+    { key: "service", label: "服务名称", type: "text", required: true },
     { key: "account", label: "账号", type: "text" },
     { key: "codes", label: "恢复码", type: "multiline", required: true },
-    { key: "method", label: "方式", type: "text" },
-    { key: "issued_at", label: "签发日", type: "text" },
+    { key: "method", label: "验证方式", type: "text" },
+    { key: "issued_at", label: "签发日期", type: "text" },
     { key: "notes", label: "备注", type: "multiline" },
   ],
   generic: [],
@@ -128,13 +128,13 @@ function assertPort(value: string) {
   if (!value) return;
   const n = Number(value);
   if (!Number.isInteger(n) || n < 1 || n > 65535) {
-    throw new ApiError(400, "validation", "端口须在 1-65535");
+    throw new ApiError(400, "validation", "端口须为 1–65535");
   }
 }
 
 function assertDate(value: string, label: string) {
   if (value && !DATE_RE.test(value)) {
-    throw new ApiError(400, "validation", `${label}格式为 YYYY-MM-DD`);
+    throw new ApiError(400, "validation", `${label}须为 YYYY-MM-DD 格式`);
   }
 }
 
@@ -159,13 +159,13 @@ export function validateRecordInput(
     const label = field.label.trim();
     const value = field.value ?? "";
     if (!KEY_RE.test(key)) {
-      throw new ApiError(400, "validation", `字段键无效: ${field.key}`);
+      throw new ApiError(400, "validation", `字段名无效：${field.key}`);
     }
-    if (!label) throw new ApiError(400, "validation", "字段标签不能为空");
+    if (!label) throw new ApiError(400, "validation", "显示名称不能为空");
     if (!["text", "secret", "multiline"].includes(field.type)) {
       throw new ApiError(400, "validation", "字段类型无效");
     }
-    if (seen.has(key)) throw new ApiError(400, "validation", `重复字段: ${key}`);
+    if (seen.has(key)) throw new ApiError(400, "validation", `字段名重复：${key}`);
     seen.add(key);
     cleaned.push({ key, label, type: field.type, value });
   }
@@ -188,7 +188,7 @@ export function validateRecordInput(
     assertPort(optional(map, "port"));
     const uri = optional(map, "conn_uri");
     if (uri && !uri.includes("://")) {
-      throw new ApiError(400, "validation", "连接串须含 ://");
+      throw new ApiError(400, "validation", "连接字符串须包含 ://");
     }
   }
 
@@ -196,21 +196,21 @@ export function validateRecordInput(
     const cert = requireValue(map, "certificate", "证书 PEM");
     const key = requireValue(map, "private_key", "私钥 PEM");
     if (!cert.includes("BEGIN CERTIFICATE")) {
-      throw new ApiError(400, "validation", "证书须为 PEM");
+      throw new ApiError(400, "validation", "证书须为 PEM 格式");
     }
     if (!key.includes("BEGIN") || !key.includes("PRIVATE KEY")) {
-      throw new ApiError(400, "validation", "私钥须为 PEM");
+      throw new ApiError(400, "validation", "私钥须为 PEM 格式");
     }
     assertDate(optional(map, "not_after"), "有效期");
   }
 
   if (category === "apikey") {
-    assertDate(optional(map, "expires_at"), "到期日");
+    assertDate(optional(map, "expires_at"), "到期日期");
     assertHttp(optional(map, "endpoint"), "接口地址");
   }
 
   if (category === "login") {
-    assertHttp(optional(map, "url"), "登录 URL");
+    assertHttp(optional(map, "url"), "登录地址");
   }
 
   if (category === "cloud") {
@@ -225,10 +225,10 @@ export function validateRecordInput(
   if (category === "domain") {
     const domain = requireValue(map, "domain", "域名");
     if (!domain.includes(".")) {
-      throw new ApiError(400, "validation", "域名须含 .");
+      throw new ApiError(400, "validation", "域名须包含英文句点");
     }
     assertHttp(optional(map, "console_url"), "控制台");
-    assertDate(optional(map, "expires_at"), "到期日");
+    assertDate(optional(map, "expires_at"), "到期日期");
   }
 
   if (category === "network") {
@@ -241,11 +241,11 @@ export function validateRecordInput(
   }
 
   if (category === "recovery") {
-    assertDate(optional(map, "issued_at"), "签发日");
+    assertDate(optional(map, "issued_at"), "签发日期");
   }
 
   if (category === "generic" && cleaned.filter((f) => f.value.trim()).length < 1) {
-    throw new ApiError(400, "validation", "至少填写一个键值对");
+    throw new ApiError(400, "validation", "至少填写一个字段");
   }
 
   return cleaned;

@@ -97,7 +97,7 @@ describe("fidelius api", () => {
         description: "lab gateway",
         category: "login",
         fields: [
-          { key: "site", label: "站点或应用", type: "text", value: "intranet" },
+          { key: "site", label: "网站或应用", type: "text", value: "intranet" },
           { key: "username", label: "账号", type: "text", value: "apollo" },
           { key: "password", label: "密码", type: "secret", value: "test-password-not-real" },
         ],
@@ -237,7 +237,7 @@ describe("fidelius api", () => {
         fields: [
           { key: "engine", label: "引擎", type: "text", value: "postgres" },
           { key: "host", label: "主机", type: "text", value: "db.internal" },
-          { key: "database", label: "库名", type: "text", value: "app" },
+          { key: "database", label: "数据库名", type: "text", value: "app" },
           { key: "username", label: "用户名", type: "text", value: "app" },
           { key: "password", label: "密码", type: "secret", value: "test-password-not-real" },
         ],
@@ -268,7 +268,7 @@ describe("fidelius api", () => {
         description: "",
         category: "cloud",
         fields: [
-          { key: "provider", label: "云厂商", type: "text", value: "cloudflare" },
+          { key: "provider", label: "云服务商", type: "text", value: "cloudflare" },
           { key: "access_key", label: "访问密钥", type: "secret", value: "test-password-not-real" },
         ],
       }),
@@ -310,7 +310,7 @@ describe("fidelius api", () => {
         description: "",
         category: "recovery",
         fields: [
-          { key: "service", label: "服务", type: "text", value: "github" },
+          { key: "service", label: "服务名称", type: "text", value: "github" },
           { key: "codes", label: "恢复码", type: "multiline", value: "test-password-not-real" },
         ],
       }),
@@ -370,5 +370,62 @@ describe("fidelius api", () => {
 
     const me = await json("/api/me", { headers: headers(ADMIN) });
     expect(me.body.user).toMatchObject({ displayName: "阿波罗" });
+  });
+
+  it("lets an active user reset totp after proving the current code", async () => {
+    const oldSecret = await enroll(ADMIN);
+    const { cookie } = await unlock(ADMIN, oldSecret);
+    const unlocked = await json("/api/me", {
+      headers: { ...headers(ADMIN), Cookie: cookie.split(";")[0] },
+    });
+    expect(unlocked.body.unlocked).toBe(true);
+
+    const wrong = await json("/api/enroll/reset/start", {
+      method: "POST",
+      headers: headers(ADMIN),
+      body: JSON.stringify({ code: "000000" }),
+    });
+    expect(wrong.res.status).toBe(400);
+    expect(wrong.body.code).toBe("totp_invalid");
+
+    const earlyConfirm = await json("/api/enroll/reset/confirm", {
+      method: "POST",
+      headers: headers(ADMIN),
+      body: JSON.stringify({ code: await generateTotp(oldSecret) }),
+    });
+    expect(earlyConfirm.res.status).toBe(400);
+
+    const start = await json("/api/enroll/reset/start", {
+      method: "POST",
+      headers: headers(ADMIN),
+      body: JSON.stringify({ code: await generateTotp(oldSecret) }),
+    });
+    expect(start.res.status).toBe(200);
+    const newSecret = String(start.body.secret);
+    expect(newSecret).not.toBe(oldSecret);
+
+    const confirm = await json("/api/enroll/reset/confirm", {
+      method: "POST",
+      headers: { ...headers(ADMIN), Cookie: cookie.split(";")[0] },
+      body: JSON.stringify({ code: await generateTotp(newSecret) }),
+    });
+    expect(confirm.res.status).toBe(200);
+    expect(confirm.body.unlocked).toBe(false);
+
+    const after = await json("/api/me", {
+      headers: { ...headers(ADMIN), Cookie: cookie.split(";")[0] },
+    });
+    expect(after.body.unlocked).toBe(false);
+
+    const oldUnlock = await json("/api/unlock", {
+      method: "POST",
+      headers: headers(ADMIN),
+      body: JSON.stringify({ code: await generateTotp(oldSecret) }),
+    });
+    expect(oldUnlock.res.status).toBe(400);
+    expect(oldUnlock.body.code).toBe("totp_invalid");
+
+    const { cookie: nextCookie } = await unlock(ADMIN, newSecret);
+    expect(nextCookie).toContain("fidelius_unlock=");
   });
 });

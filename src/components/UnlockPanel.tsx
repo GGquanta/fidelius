@@ -70,7 +70,7 @@ export function UnlockPanel({
           </span>
           <div>
             <h2 className="text-base font-medium">{done ? "已开锁" : "开锁"}</h2>
-            <p className="text-sm text-muted">{done ? "敏感字段已揭开" : "输入认证器中的 6 位数字"}</p>
+            <p className="text-sm text-muted">{done ? "敏感字段已显示" : "请输入验证器中的 6 位验证码"}</p>
           </div>
         </div>
         <div className="mt-6">
@@ -114,7 +114,7 @@ export function SensitiveUnlock({ onToast }: { onToast: (text: string) => void }
         <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-tile bg-surface text-peach-ink">
           <LockSimple size={16} />
         </span>
-        <p className="min-w-0 flex-1 text-sm text-peach-ink">敏感值已封存。开锁后揭开。</p>
+        <p className="min-w-0 flex-1 text-sm text-peach-ink">敏感内容已封存，开锁后可查看。</p>
         <Button type="button" onClick={() => setOpen(true)}>
           开锁
         </Button>

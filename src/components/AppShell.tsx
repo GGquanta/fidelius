@@ -8,7 +8,7 @@ import {
   Users,
   Vault,
 } from "@phosphor-icons/react";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import { useSession } from "../session";
@@ -24,7 +24,7 @@ function isSensitivePath(pathname: string) {
 
 function itemClass(active: boolean) {
   return `flex h-9 w-full items-center gap-2 rounded-box px-3 text-sm ${
-    active ? "bg-accent-soft text-accent-ink" : "text-muted hover:bg-hover hover:text-ink"
+    active ? "bg-accent-soft text-accent-ink" : "side-hit text-muted"
   }`;
 }
 
@@ -38,6 +38,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [counts, setCounts] = useState<Record<string, number>>({ all: 0 });
   const [vaultOpen, setVaultOpen] = useState(true);
   const [profileOpen, setProfileOpen] = useState(false);
+  const closeProfile = useCallback(() => setProfileOpen(false), []);
   const category = (params.get("category") as CategoryId | null) ?? "all";
   const onVault = location.pathname === "/vault";
   const inVaultSection =
@@ -106,7 +107,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <SealMark size={36} />
           <span className="min-w-0">
             <span className="block text-base font-medium tracking-[-0.04em]">Fidelius</span>
-            <span className="mt-0.5 block text-[12px] leading-snug text-tertiary">封缄之后，各安其位</span>
+            <span className="mt-0.5 block text-[12px] leading-snug text-tertiary">团队保险库</span>
           </span>
         </Link>
         <div className="mx-5 mt-1 h-px bg-line" />
@@ -127,17 +128,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     ? "bg-accent-soft text-accent-ink"
                     : inVaultSection
                       ? "text-ink"
-                      : "text-muted hover:bg-hover hover:text-ink"
+                      : "side-hit text-muted"
                 }`}
                 onClick={() => selectCategory("all")}
               >
                 <Vault size={16} className="text-tertiary" />
                 <span className="min-w-0 flex-1 text-left">保险库</span>
-                <span className="font-mono text-[12px] text-tertiary">{counts.all ?? 0}</span>
+                <span className="font-metric text-[12px] text-tertiary">{counts.all ?? 0}</span>
               </button>
               <button
                 type="button"
-                className="rounded-box p-2 text-tertiary hover:bg-hover hover:text-ink"
+                className="side-hit rounded-box p-2 text-tertiary"
                 aria-expanded={vaultOpen}
                 aria-label={vaultOpen ? "收起分类" : "展开分类"}
                 onClick={() => setVaultOpen((open) => !open)}
@@ -154,13 +155,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       <button
                         type="button"
                         onClick={() => selectCategory(item.id)}
-                        className={`flex h-8 w-full items-center gap-2 rounded-box px-2 text-sm ${
-                          active ? "bg-accent-soft text-accent-ink" : "text-muted hover:bg-hover hover:text-ink"
+                        className={`flex h-9 w-full items-center gap-2 rounded-box px-3 text-sm ${
+                          active ? "bg-accent-soft text-accent-ink" : "side-hit text-muted"
                         }`}
                       >
                         <CategoryIcon category={item.id} size={20} />
                         <span className="min-w-0 flex-1 truncate text-left">{item.label}</span>
-                        <span className="font-mono text-[12px] text-tertiary">{counts[item.id] ?? 0}</span>
+                        <span className="font-metric text-[12px] text-tertiary">{counts[item.id] ?? 0}</span>
                       </button>
                     </li>
                   );
@@ -208,7 +209,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </button>
           </div>
         </div>
-        <ProfilePanel open={profileOpen} onClose={() => setProfileOpen(false)} />
+        <ProfilePanel open={profileOpen} onClose={closeProfile} />
       </aside>
       <div className="flex min-h-0 min-w-0 flex-col">
         <header className="flex h-16 shrink-0 items-center border-b border-line bg-surface px-6">
@@ -222,7 +223,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             />
           </form>
         </header>
-        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto">{children}</main>
+        <main className="mesh-glow flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">{children}</main>
       </div>
     </div>
   );

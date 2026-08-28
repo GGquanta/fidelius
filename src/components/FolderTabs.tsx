@@ -26,7 +26,7 @@ export function FolderTabs({
           >
             <CategoryIcon category={item.id} size={20} />
             <span className="min-w-0 flex-1 truncate text-left text-[12px] leading-none">{item.short}</span>
-            <span className="font-mono text-[12px] leading-none text-tertiary">{counts[item.id] ?? 0}</span>
+            <span className="font-metric text-[12px] leading-none text-tertiary">{counts[item.id] ?? 0}</span>
           </button>
         );
       })}

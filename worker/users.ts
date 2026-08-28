@@ -90,13 +90,13 @@ export async function createUser(
   if (!email.includes("@")) throw new ApiError(400, "validation", "邮箱无效");
   if (!input.displayName.trim()) throw new ApiError(400, "validation", "显示名不能为空");
   if (await getUserByEmail(env, email)) {
-    throw new ApiError(409, "validation", "该邮箱已存在");
+    throw new ApiError(409, "validation", "该邮箱已添加");
   }
 
   const meta = await getUsersMeta(env);
   const occupied = (await listUsers(env)).filter((u) => u.status !== "disabled").length;
   if (occupied >= USER_LIMIT) {
-    throw new ApiError(400, "user_limit", "用户已达上限 10 人");
+    throw new ApiError(400, "user_limit", "成员已达上限 10 人");
   }
 
   const timestamp = nowIso();
@@ -124,7 +124,7 @@ export async function disableUser(env: Env, id: string, actor: User): Promise<Us
   if (!user) throw new ApiError(404, "not_found", "用户不存在");
   const owned = await getJson<{ recordIds: string[] }>(env.FIDELIUS, keys.ownerIndex(id));
   if (owned?.recordIds.length) {
-    throw new ApiError(400, "user_has_records", "请先删除该用户拥有的记录");
+    throw new ApiError(400, "user_has_records", "请先删除该成员名下的记录");
   }
   user.status = "disabled";
   user.updatedAt = nowIso();
@@ -138,7 +138,7 @@ const DISPLAY_NAME_MAX = 32;
 export async function updateDisplayName(env: Env, user: User, displayName: string): Promise<User> {
   const name = displayName.trim();
   if (!name) throw new ApiError(400, "validation", "显示名不能为空");
-  if (name.length > DISPLAY_NAME_MAX) throw new ApiError(400, "validation", "显示名最多 32 字");
+  if (name.length > DISPLAY_NAME_MAX) throw new ApiError(400, "validation", "显示名最多 32 个字符");
   if (name === user.displayName) return user;
   user.displayName = name;
   user.updatedAt = nowIso();
@@ -151,7 +151,7 @@ export async function startEnroll(
   user: User,
 ): Promise<{ otpauth: string; secret: string }> {
   if (user.status === "disabled") throw new ApiError(403, "disabled", "账号已停用");
-  if (user.status === "active") throw new ApiError(400, "validation", "已完成编排");
+  if (user.status === "active") throw new ApiError(400, "validation", "已完成绑定");
 
   const master = await importMasterKey(env.MASTER_KEY);
   const existing = await env.FIDELIUS.get(keys.enroll(user.id));
@@ -168,11 +168,11 @@ export async function startEnroll(
 
 export async function confirmEnroll(env: Env, user: User, code: string): Promise<User> {
   if (user.status === "disabled") throw new ApiError(403, "disabled", "账号已停用");
-  if (user.status === "active") throw new ApiError(400, "validation", "已完成编排");
+  if (user.status === "active") throw new ApiError(400, "validation", "已完成绑定");
 
   const master = await importMasterKey(env.MASTER_KEY);
   const packed = await env.FIDELIUS.get(keys.enroll(user.id));
-  if (!packed) throw new ApiError(400, "validation", "请先开始编排");
+  if (!packed) throw new ApiError(400, "validation", "请先开始绑定");
   const payload = await decryptJson<TotpPayload>(master, packed);
   if (!(await verifyTotp(payload.secret, code))) {
     throw new ApiError(400, "totp_invalid", "验证码不正确");
@@ -191,32 +191,85 @@ async function readLockout(env: Env, userId: string): Promise<Lockout> {
   return (await getJson<Lockout>(env.FIDELIUS, keys.lockout(userId))) ?? { fails: 0 };
 }
 
-export async function unlock(env: Env, user: User, code: string): Promise<{ token: string; exp: number }> {
-  if (user.status !== "active") throw new ApiError(403, "pending_enroll", "请先完成编排");
-  const lockout = await readLockout(env, user.id);
+async function enforceLockout(env: Env, userId: string): Promise<Lockout> {
+  const lockout = await readLockout(env, userId);
   if (lockout.until && lockout.until > Date.now()) {
     throw new ApiError(429, "totp_locked", "验证已锁定，请稍后再试");
   }
+  return lockout;
+}
 
+async function recordTotpFailure(env: Env, userId: string, lockout: Lockout): Promise<never> {
+  const fails = lockout.fails + 1;
+  const next: Lockout = {
+    fails,
+    until: fails >= TOTP_FAIL_LIMIT ? Date.now() + TOTP_LOCK_SECONDS * 1000 : undefined,
+  };
+  await putJson(env.FIDELIUS, keys.lockout(userId), next, {
+    expirationTtl: TOTP_LOCK_SECONDS,
+  });
+  if (next.until) throw new ApiError(429, "totp_locked", "验证已锁定，请稍后再试");
+  throw new ApiError(400, "totp_invalid", "验证码不正确");
+}
+
+async function verifyCurrentTotp(env: Env, user: User, code: string): Promise<void> {
+  const lockout = await enforceLockout(env, user.id);
   const master = await importMasterKey(env.MASTER_KEY);
   const packed = await env.FIDELIUS.get(keys.totp(user.id));
-  if (!packed) throw new ApiError(400, "validation", "未找到编排信息");
+  if (!packed) throw new ApiError(400, "validation", "未找到验证器信息");
   const payload = await decryptJson<TotpPayload>(master, packed);
-  const ok = await verifyTotp(payload.secret, code);
-  if (!ok) {
-    const fails = lockout.fails + 1;
-    const next: Lockout = {
-      fails,
-      until: fails >= TOTP_FAIL_LIMIT ? Date.now() + TOTP_LOCK_SECONDS * 1000 : undefined,
-    };
-    await putJson(env.FIDELIUS, keys.lockout(user.id), next, {
-      expirationTtl: TOTP_LOCK_SECONDS,
-    });
-    if (next.until) throw new ApiError(429, "totp_locked", "验证已锁定，请稍后再试");
+  if (!(await verifyTotp(payload.secret, code))) {
+    await recordTotpFailure(env, user.id, lockout);
+  }
+  await env.FIDELIUS.delete(keys.lockout(user.id));
+}
+
+export async function startResetEnroll(
+  env: Env,
+  user: User,
+  code: string,
+): Promise<{ otpauth: string; secret: string }> {
+  if (user.status !== "active") throw new ApiError(403, "pending_enroll", "请先绑定验证器");
+  await verifyCurrentTotp(env, user, code);
+
+  const master = await importMasterKey(env.MASTER_KEY);
+  const existing = await env.FIDELIUS.get(keys.enroll(user.id));
+  if (existing) {
+    const payload = await decryptJson<TotpPayload>(master, existing);
+    return { otpauth: otpauthUrl(user.email, payload.secret), secret: payload.secret };
+  }
+  const secret = newTotpSecret();
+  await env.FIDELIUS.put(keys.enroll(user.id), await encryptJson(master, { secret } satisfies TotpPayload), {
+    expirationTtl: ENROLL_TTL_SECONDS,
+  });
+  return { otpauth: otpauthUrl(user.email, secret), secret };
+}
+
+export async function confirmResetEnroll(env: Env, user: User, code: string): Promise<User> {
+  if (user.status !== "active") throw new ApiError(403, "pending_enroll", "请先绑定验证器");
+
+  const master = await importMasterKey(env.MASTER_KEY);
+  const packed = await env.FIDELIUS.get(keys.enroll(user.id));
+  if (!packed) throw new ApiError(400, "validation", "请先开始更换验证器");
+  const payload = await decryptJson<TotpPayload>(master, packed);
+  if (!(await verifyTotp(payload.secret, code))) {
     throw new ApiError(400, "totp_invalid", "验证码不正确");
   }
 
+  payload.confirmedAt = nowIso();
+  await env.FIDELIUS.put(keys.totp(user.id), await encryptJson(master, payload));
+  await env.FIDELIUS.delete(keys.enroll(user.id));
   await env.FIDELIUS.delete(keys.lockout(user.id));
+  await lock(env, user.id);
+  user.updatedAt = nowIso();
+  await saveUser(env, user);
+  return user;
+}
+
+export async function unlock(env: Env, user: User, code: string): Promise<{ token: string; exp: number }> {
+  if (user.status !== "active") throw new ApiError(403, "pending_enroll", "请先绑定验证器");
+  await verifyCurrentTotp(env, user, code);
+
   const token = [...randomBytes(32)].map((b) => b.toString(16).padStart(2, "0")).join("");
   const session: UnlockSession = { token, exp: Date.now() + UNLOCK_TTL_SECONDS * 1000 };
   await putJson(env.FIDELIUS, keys.unlock(user.id), session, {

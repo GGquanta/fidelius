@@ -13,13 +13,13 @@ function Shell() {
   const { code, user, error } = useSession();
 
   if (code === "loading") {
-    return <main className="grid min-h-[100dvh] place-items-center text-muted">载入中</main>;
+    return <main className="mesh-glow grid min-h-[100dvh] place-items-center text-muted">加载中</main>;
   }
   if (error) {
     return <GatePage title="无法连接" body={error} />;
   }
   if (code === "not_provisioned") {
-    return <GatePage title="账号未开通" body="请联系管理员把你的 Access 邮箱加入 Fidelius。" />;
+    return <GatePage title="账号尚未开通" body="请联系管理员将你的 Access 邮箱加入 Fidelius。" />;
   }
   if (code === "disabled") {
     return <GatePage title="账号已停用" body="如需恢复访问，请联系管理员。" />;

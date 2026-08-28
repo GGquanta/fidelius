@@ -25,7 +25,7 @@ export function EnrollPage() {
           await QRCode.toDataURL(result.otpauth, {
             margin: 1,
             width: 220,
-            color: { dark: "#8F49DF", light: "#FBFAF8" },
+            color: { dark: "#8F49DF", light: "#FFFEFC" },
           }),
         );
       })
@@ -51,24 +51,24 @@ export function EnrollPage() {
       <div className="rise mx-auto grid min-h-[100dvh] max-w-4xl items-center gap-10 px-6 py-16 md:grid-cols-2">
         <div>
           <SealMark size={40} />
-          <h1 className="font-display mt-6 text-4xl tracking-tight">把验证器写入这把钥匙</h1>
+          <h1 className="font-display mt-6 text-4xl tracking-tight">绑定验证器</h1>
           <p className="mt-3 max-w-[42ch] text-muted">
-            用认证器扫描二维码，或手动输入密钥，再填写当前 6 位数字以确认设备已就绪。
+            用验证器扫描二维码，或手动输入密钥，然后填写当前 6 位验证码。
           </p>
         </div>
         <div className="rounded-xl border border-line bg-surface p-6 shadow-elev-3">
           {qr ? (
-            <img src={qr} alt="TOTP 二维码" className="h-44 w-44 rounded-tile bg-canvas p-2" />
+            <img src={qr} alt="验证器二维码" className="h-44 w-44 rounded-tile bg-canvas p-2" />
           ) : (
             <div className="h-44 w-44 rounded-tile bg-hover" />
           )}
           <p className="mt-4 break-all font-mono text-xs text-tertiary">{secret || otpauth}</p>
           <form onSubmit={(event) => void confirm(event)} className="mt-6">
-            <p className="mb-3 text-xs text-muted">确认码</p>
+            <p className="mb-3 text-xs text-muted">验证码</p>
             <OtpBoxes value={code} onChange={setCode} disabled={busy} />
             {err ? <p className="mt-3 text-sm text-danger">{err}</p> : null}
             <Button type="submit" disabled={busy || code.length !== 6} className="mt-6">
-              完成编排
+              完成绑定
             </Button>
           </form>
         </div>

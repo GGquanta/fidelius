@@ -25,5 +25,5 @@ export async function resolveEmail(
     return normalizeEmail(env.BOOTSTRAP_ADMIN_EMAIL);
   }
 
-  throw new ApiError(401, "unauthenticated", "无法确认身份");
+  throw new ApiError(401, "unauthenticated", "无法验证身份");
 }

@@ -29,7 +29,7 @@ export function OtpBoxes({
           maxLength={6}
           disabled={disabled}
           value={digit}
-          aria-label={`第 ${index + 1} 位`}
+          aria-label={`第 ${index + 1} 位验证码`}
           onChange={(event) => {
             const raw = event.target.value.replace(/\D/g, "");
             if (raw.length > 1) {

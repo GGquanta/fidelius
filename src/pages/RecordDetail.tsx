@@ -13,11 +13,11 @@ import { useToast } from "../ui";
 
 const ACTION_LABEL: Record<string, string> = {
   create: "创建",
-  update: "修改",
+  update: "更新",
   share: "分享",
   unshare: "收回",
   delete: "删除",
-  reveal: "揭开",
+  reveal: "查看",
 };
 
 export function RecordDetailPage() {
@@ -155,8 +155,8 @@ export function RecordDetailPage() {
           <aside className="space-y-8 border-t border-line px-5 py-5 lg:border-t-0 lg:border-l">
             <section>
               <h2 className="text-[12px] tracking-[0.08em] text-tertiary">时间</h2>
-              <p className="mt-3 text-sm">创建 {record ? formatTime(record.createdAt) : ""}</p>
-              <p className="mt-1 text-sm">修改 {record ? formatTime(record.updatedAt) : ""}</p>
+              <p className="mt-3 text-sm">创建于 {record ? formatTime(record.createdAt) : ""}</p>
+              <p className="mt-1 text-sm">更新于 {record ? formatTime(record.updatedAt) : ""}</p>
             </section>
             {owner ? (
               <section>
@@ -167,7 +167,7 @@ export function RecordDetailPage() {
                     onChange={(e) => setShareId(e.target.value)}
                     className="w-full rounded-box border border-line-strong bg-canvas px-3 py-2 text-sm outline-none"
                   >
-                    <option value="">选择同事</option>
+                    <option value="">选择成员</option>
                     {shareable.map((person) => (
                       <option key={person.id} value={person.id}>
                         {person.displayName}
@@ -217,9 +217,9 @@ export function RecordDetailPage() {
               </section>
             ) : null}
             <section>
-              <h2 className="text-[12px] tracking-[0.08em] text-tertiary">修改日志</h2>
+              <h2 className="text-[12px] tracking-[0.08em] text-tertiary">操作记录</h2>
               <ul className="mt-3 space-y-3">
-                {audit.length === 0 ? <li className="text-sm text-tertiary">暂无记录</li> : null}
+                {audit.length === 0 ? <li className="text-sm text-tertiary">暂无操作记录</li> : null}
                 {audit.map((entry, index) => (
                   <li key={`${entry.at}-${index}`}>
                     <p className="text-sm">{ACTION_LABEL[entry.action] ?? entry.action}</p>
@@ -237,7 +237,7 @@ export function RecordDetailPage() {
       {confirmDelete ? (
         <div className="fixed inset-0 z-20 grid place-items-center bg-ink/25 p-4">
           <div className="w-[min(90vw,360px)] rounded-xl border border-line bg-surface p-6 shadow-elev-5">
-            <p>删除后无法恢复。确定删除这条记录？</p>
+            <p>删除后无法恢复，确定要删除这条记录吗？</p>
             <div className="mt-6 flex justify-end gap-3">
               <Button type="button" tone="tertiary" onClick={() => setConfirmDelete(false)}>
                 取消

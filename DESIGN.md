@@ -34,7 +34,7 @@ fidelius/
 | `audit:{recordId}` | `{ entries: AuditEntry[] }` 最多 100 |
 | `unlock:{userId}` | `{ token, exp }` TTL 600 |
 | `lockout:{userId}` | `{ fails, until? }` |
-| `enroll:{userId}` | 编排中的临时 TOTP 明文，TTL 600 |
+| `enroll:{userId}` | 绑定过程中的临时 TOTP 明文，TTL 600 |
 
 写入后返回内存中的新值，不立即回读 KV。
 
@@ -88,8 +88,10 @@ interface VaultRecord {
 | --- | --- | --- |
 | GET | `/api/me` | 当前用户、开锁状态、`unlockExpiresAt` |
 | PATCH | `/api/me` | `{ displayName }`，改自己的显示名 |
-| POST | `/api/enroll/start` | 开始编排，返回 otpauth |
+| POST | `/api/enroll/start` | 开始绑定验证器，返回 otpauth |
 | POST | `/api/enroll/confirm` | `{ code }` |
+| POST | `/api/enroll/reset/start` | `{ code }` 核对当前 TOTP 后开始更换验证器，返回 otpauth |
+| POST | `/api/enroll/reset/confirm` | `{ code }` 确认新验证器，旧密钥作废并封存 |
 | POST | `/api/unlock` | `{ code }`，返回 `unlockExpiresAt` |
 | POST | `/api/lock` | 封存 |
 | GET | `/api/records` | 元数据列表，`?category=&q=` |
@@ -109,7 +111,7 @@ interface VaultRecord {
 
 ## 界面
 
-定位：摆在暖白纸面上的紫罗兰色文件柜。生动感来自分类色、拟物折页和大号数字，而不是满屏渐变。
+定位：摆在偏米黄的亮纸面上的紫罗兰色文件柜。生动感来自分类色、拟物折页和大号数字，而不是满屏渐变。
 
 旋钮：方差 7、动效 4、密度 5。
 
@@ -117,13 +119,13 @@ interface VaultRecord {
 
 ### 令牌
 
-亮色（默认）。灰阶暖中性，hue 24–40。主色紫罗兰，副色蜜桃。组件引用语义角色，不直接引用色阶。
+亮色（默认）。灰阶暖中性，hue 24–40；canvas 单独取 48° 米黄高明度。主色紫罗兰，副色蜜桃。组件引用语义角色，不直接引用色阶。
 
 角色：
 
-- canvas `hsl(40, 30%, 98%)` 纸面。纸面带一层淡方格瓷砖纹理：砖缝规则，砖面明度按混批打散，色相偏尘粉 / 蜜桃（338°–20°），禁止棋盘、正弦波、小循环与平滑噪波云。纹理是 `html` 的背景层，只透过 canvas，不盖 surface。其上叠垂直半透明 canvas 渐变（顶近隐、中下显），只改透明度，不算第四种色相渐变
+- canvas `hsl(48, 100%, 99.4%)` 偏米黄的近白纸面。纸面带一层淡方格瓷砖纹理：砖缝规则，砖面明度按混批打散，色相贴近蜜桃粉（6°–16°），须可辨认、勿过浓。纹理是 `html` 的背景层，只透过 canvas，不盖 surface。其上叠垂直半透明 canvas 渐变（顶近隐、中下显），只改透明度，不算第四种色相渐变
 - surface `#FFFFFF` 抬升卡
-- hover `hsl(36, 24%, 94%)`
+- hover `hsl(46, 40%, 97.2%)`
 - ink `hsl(24, 20%, 13%)` 主文字 13.5:1
 - muted `hsl(24, 18%, 32%)` 次文字 ≥4.5:1
 - tertiary `hsl(26, 16%, 40%)` 脚注 ≥4.5:1
@@ -142,11 +144,11 @@ interface VaultRecord {
 
 - 服务器 268° 紫罗兰 · HardDrives
 - 数据库 158° 薄荷 · Database
-- SSL 205° 天青 · Certificate
+- SSL 证书 205° 天青 · Certificate
 - API 密钥 42° 琥珀 · Code
-- 登录 338° 玫粉 · Fingerprint
+- 登录账号 338° 玫粉 · Fingerprint
 - 云平台 232° 靛蓝 · Cloud
-- 域名 DNS 90° 青柠 · Globe
+- 域名与 DNS 90° 青柠 · Globe
 - 网络 182° 蓝绿 · WifiHigh
 - 恢复码 12° 珊瑚 · Lifebuoy
 - 通用 32° 暖石 · Cube
@@ -156,7 +158,7 @@ interface VaultRecord {
 
 高度五档两段式，阴影色 `hsla(24, 20%, 13%, …)`，alpha `.04–.18`。
 
-字体：Geist Variable（界面）、Outfit Variable（≥30px 展示与统计数字）、Geist Mono（秘密值、密钥、时间）。
+字体：Geist Variable（界面）、Outfit Variable（≥30px 展示标题）、Geist Mono（秘密值、密钥、时间）。指标数字用 Geist `tabular-nums`，含统计卡、分类条数、名额、图例与侧栏计数。
 
 图标：Phosphor Regular，导航 16px，瓷砖 20px。
 
@@ -167,7 +169,7 @@ interface VaultRecord {
 只允许三种，色相行程 ≤40°：
 
 1. 主按钮：`linear-gradient(180deg, violet-500, violet-600)` + `inset 0 1px 0`
-2. 品牌氛围光：Dashboard 顶部与门页径向 mesh，紫罗兰 + 蜜桃，alpha ≤ 0.08
+2. 品牌氛围光：已登录工作区主栏左上与门页径向 mesh，紫罗兰 + 蜜桃，alpha ≤ 0.08。挂在壳层 `main`，各页共用，不逐页重画
 3. 折页与瓷砖纸面：`linear-gradient(180deg, cat-tint, surface)`
 
 禁止文字渐变、彩虹、紫→青长行程、给所有边框套渐变。
@@ -188,30 +190,31 @@ interface VaultRecord {
 
 侧栏 272px，底为毛玻璃：半透明 canvas + `backdrop-filter` 模糊纸面纹理，与主区用一根 hairline 分开，让纸面坐在前面。`prefers-reduced-transparency` 时退回实色 canvas。结构：
 
-- 顶：印记 36px + 字标 + 一句脚注，下方一根分隔
+- 顶：印记 36px + 字标 + 脚注「团队保险库」，下方一根分隔
 - 工作台：概览
-- 保险库：可展开树。父行是「保险库」+ 总数 + 折页箭头；子项含「全部」与 10 个分类（20px 瓷砖、名称、计数），由左侧 1px 轨成树。点选写入 `/vault?category=`。父行只负责展开/进入全部，不高亮成与子项抢权重
+- 保险库：可展开树。父行是「保险库」+ 总数 + 折页箭头；子项含「全部」与 10 个分类（20px 瓷砖、名称、计数），由左侧 1px 轨成树。子项行高 36px，左右内边距 12px，与父行同档，行距 12px。点选写入 `/vault?category=`。父行只负责展开/进入全部，不高亮成与子项抢权重
+- 侧栏未选中项 hover 用 ink 以 16% 混入透明底（暗色 20%），在毛玻璃上才能读出；不用 `--hover`（与 canvas 过近）。选中仍为 accent-soft。
 - admin 见团队
 - 底：用户卡可点（圆印、显示名、角色），打开个人资料面板；主题切换是卡上独立按钮，不打开面板。卡本身有边框，不是一条裸 footer
 
-选中用 accent-soft 铺底，不用左侧色条。顶栏只含搜索。开锁不出现在侧栏、顶栏、概览、保险库列表。
+选中用 accent-soft 铺底，不用左侧色条。顶栏只含搜索。主栏 `main` 带品牌氛围光，保险库、详情、新建、团队与概览同一层纸面光。开锁不出现在侧栏、顶栏、概览、保险库列表。
 
 ### 开锁
 
-只在记录详情与编辑页、需要揭开敏感值时提供开锁。离开 `/records/*` 立即 `POST /api/lock`。概览与保险库列表永不展示开锁。
+只在记录详情与编辑页、需要查看敏感值时提供开锁。离开 `/records/*` 立即 `POST /api/lock`。概览与保险库列表永不展示开锁。
 
 ### 概览 `/`
 
 数据全部由 `GET /api/records` 与 `GET /api/users` 在前端聚合，不新增聚合接口。
 
 - 问候 + 新建
-- 四张统计卡：总数 / 我的 / 收到的分享 / 分出去的，Outfit 48–60px 数字
+- 四张统计卡：全部 / 我的 / 他人分享 / 我分享的，Geist 48–60px tabular 数字
 - 分类分布：横向堆叠条 + 图例（色块 + 名称 + 计数）
-- 分类瓷砖网格：跳 `/vault?category=`
-- 字段构成：text / secret / multiline 环形图（只读 `fieldMeta`）
-- 最近更新：5 张记录卡
-- 更新节律：近 12 周 `updatedAt` 分桶
-- 团队席位（admin）：10 格
+- 分类瓷砖网格：跳 `/vault?category=`。每格是索引卡：左分类瓷砖 + 名称 + 最近更新（空则「暂无记录」），右 36px tabular 条数、竖直居中，不加单位。折角用分类浅底，横排占满格宽，不把元素撑到四角
+- 字段类型：text / secret / multiline 环形图（只读 `fieldMeta`）
+- 最近更新：5 张记录卡，嵌在 surface 面板内，只用边框与 canvas 底，不加阴影
+- 更新趋势：近 12 周 `updatedAt` 分桶
+- 成员名额（admin）：10 格
 
 图表自绘 SVG，不引图表库。
 
@@ -220,16 +223,15 @@ interface VaultRecord {
 页签是浏览器顶栏那种矮横条，贴在纸张上沿，不是大方块折页。
 
 - 条与页同高 36px，激活不改变高度、不加 padding
-- 横排：20px 瓷砖、短名、计数。页签均分柜宽，`min-width: 88px`，`max-width: 240px`；装不下横向滚动，不换行
-- 未激活底透明，hover 为 `--hover`；分类色只来自瓷砖，禁止整页铺满浅色
-- 相邻未激活页之间 1px `line` 分隔，贴着激活页或 hover 时分隔消失
-- 激活页底为 surface，盖住纸张顶边；左右 8px 凹角收进纸面（Chrome 激活页那种肩线）。禁止身后假纸边
-- 纸张顶角拉平：`border-radius: 0 0 18px 18px`，只有一层面 `--elev-3`，`min-height: 480px`
-- 纸内记录卡只用边框与 canvas 底，禁止再加阴影
+- 横排：20px 瓷砖、短名、计数。页签均分柜宽，`min-width: 112px`，`max-width: 240px`；装不下横向滚动，不换行。页签并排留缝，点按区域互不重叠；禁止负边距叠页，也不在页内再画竖线
+- 未激活页签栏为毛玻璃：半透明 canvas + `backdrop-filter` 模糊纸面纹理，与侧栏同一配方；激活页仍为实色 surface，盖在玻璃上。`prefers-reduced-transparency` 时退回实色 canvas。未激活页用 ink 8% 透明底，hover 用 16%（暗色 12% / 20%），才能在玻璃上认出是页签；分类色只来自瓷砖，禁止整页铺满浅色
+- 激活页与纸张共用一根闭合描边：`color-mix(in srgb, var(--ink) 24%, var(--surface))`（暗色 40%），比装饰 `line` 略深。左、上、右三边画在页签上，纸张顶线画在页签栏底；激活页底边用 surface 盖住顶线，左右 8px 凹角肩线与顶线同一像素对齐，禁止接缝错位或身后假纸边
+- 纸张顶角拉平：`border-radius: 0 0 18px 18px`，只有一层面 `--elev-3`。默认高度至少落到视口底（随主栏剩余高度拉伸），内容更高时纸张跟着长，由主栏滚动
+- 纸内记录卡只用边框与 canvas 底，禁止再加阴影。卡用 `auto-fill` + `minmax(360px, 1fr)` 网格，避免拉满大屏后标题漂在一行里；窄于 360px 时一列
 
 ### 其他页
 
-详情是一张纸，整页 `max-width: 960px` 居中，避免拉满大屏后控件漂在空白里。
+详情、新建/编辑与团队都是一张纸，整页 `max-width: 960px` 居中，避免拉满大屏后控件漂在空白里。
 
 - 顶行：带方框箭头的「返回保险库」，不是裸文字
 - 纸内抬头一行：左 44px 分类瓷砖 + 分类名 / 标题 / 描述；右 编辑（次按钮）与 删除（三级），与标题顶对齐，窄屏时操作折到标题下
@@ -238,11 +240,23 @@ interface VaultRecord {
 - 未开锁时在字段区顶提供开锁条（锁印 + 说明 + 主按钮）。已开锁时一行淡说明 + 封存。离开 `/records/*` 立即封存，不弹 toast
 - 删除在抬头为三级，确认弹窗内才是红色主按钮
 
-表单：10 分类选择网格。编辑时分类不可改。编辑页同样有返回。
+表单：与详情同宽的 surface 纸面，返回在纸外。纸内 10 分类选择网格，字段区只用边框与 canvas 底，不加阴影。编辑时分类不可改。编辑页同样有返回。
 
-编排页左说明右 QR 瓷砖，6 格验证码。QR 用当前 accent。空状态用大号分类瓷砖 + 新建。用户席位 10 格进度，行前姓名首字圆印。开锁为居中 `--elev-5` 面板，支持粘贴整串。个人资料同样是居中 `--elev-5` 面板：显示名可改（1–32 字），邮箱与角色只读。
+团队：同宽 surface 纸面，无返回。纸内抬头（标题 + 名额计数）+ 10 格进度 + 添加表单 + 成员列表。输入框用 canvas 底，标签在输入框上方。行前姓名首字圆印。
 
-文案用中文祈使动词：开锁、封存、复制、下载、分享、收回、保存。禁止营销套话。
+绑定页左说明右 QR 瓷砖，6 格验证码。QR 用当前 accent。空状态用大号分类瓷砖 + 新建。开锁为居中 `--elev-5` 面板，支持粘贴整串。个人资料同样是居中 `--elev-5` 面板：显示名可改（1–32 字），邮箱与角色只读，可更换验证器。弹层用 portal 挂到 `document.body`，避开侧栏 `backdrop-filter` 的 stacking context；全屏 `ink/40` 遮罩，面板在视口居中，`z-50`。点遮罩或 Escape 关闭。更换验证器分两步：当前 6 位数字，再扫新二维码并填写新码。
+
+文案用中文。按钮动词与结果一致：开锁、封存、复制、下载、分享、收回、保存。禁止营销套话、文言和直译腔。
+
+固定用语：
+
+- TOTP：绑定验证器、完成绑定、更换验证器；不用「编排」
+- 应用：验证器；不用「认证器」
+- 6 位数字：验证码；不用「确认码」
+- 查看密文：查看、显示；不用「揭开」
+- 分享统计：他人分享、我分享的；不用「收到的分享」「分出去的」
+- 近 12 周图：更新趋势；不用「更新节律」
+- 空状态：暂无记录；不用「抽屉」
 
 ### 组件
 
@@ -257,6 +271,7 @@ interface VaultRecord {
 - `charts` `StackedBar` `DonutRing` `WeekBars`
 - `OtpBoxes` 六格验证码
 - `UnlockPanel` 开锁面板
+- `Modal` 全屏遮罩弹层
 - `ProfilePanel` 个人资料
 - `EmptyState` `FieldBlock`
 
@@ -264,7 +279,7 @@ interface VaultRecord {
 
 ### 状态
 
-骨架、空保险库、未开通、待编排、TOTP 错误、锁定、无权限、删除确认。
+骨架、空保险库、未开通、待绑定、TOTP 错误、锁定、无权限、删除确认。
 
 复制成功用带勾的短提示。删除必须确认。
 

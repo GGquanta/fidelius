@@ -13,7 +13,7 @@ interface RecordField {
 }
 ```
 
-`secret` 与 `multiline` 在未开锁时显示遮罩。`multiline` 提供下载。用户可在模板字段之外追加自定义键值对。
+`secret` 与 `multiline` 在未开锁时显示遮罩。`multiline` 提供下载。用户可在模板字段之外追加自定义字段。
 
 ## 服务器密码 `server`
 
@@ -36,13 +36,13 @@ interface RecordField {
 | engine | 引擎 | text | 必填 |
 | host | 主机 | text | 必填 |
 | port | 端口 | text | 1-65535，可空 |
-| database | 库名 | text | 必填 |
+| database | 数据库名 | text | 必填 |
 | username | 用户名 | text | 必填 |
 | password | 密码 | secret | 必填 |
-| conn_uri | 连接串 | secret | 可空，若填须含 `://` |
+| conn_uri | 连接字符串 | secret | 可空，若填须含 `://` |
 | notes | 备注 | multiline | 可选 |
 
-## SSL 密钥 `ssl`
+## SSL 证书 `ssl`
 
 | key | label | type | 校验 |
 | --- | --- | --- | --- |
@@ -60,25 +60,25 @@ interface RecordField {
 | key_id | 密钥 ID | text | 可选 |
 | secret_key | 密钥 | secret | 必填 |
 | scope | 权限范围 | text | 可选 |
-| expires_at | 到期日 | text | 可选，`YYYY-MM-DD` |
+| expires_at | 到期日期 | text | 可选，`YYYY-MM-DD` |
 | endpoint | 接口地址 | text | 可选，若填须 `http` 或 `https` |
 | notes | 备注 | multiline | 可选 |
 
-## 用户登录密码 `login`
+## 登录账号 `login`
 
 | key | label | type | 校验 |
 | --- | --- | --- | --- |
-| site | 站点或应用 | text | 必填 |
+| site | 网站或应用 | text | 必填 |
 | username | 账号 | text | 必填 |
 | password | 密码 | secret | 必填 |
-| url | 登录 URL | text | 可选，若填写须为 `http` 或 `https` |
+| url | 登录地址 | text | 可选，若填写须为 `http` 或 `https` |
 | recovery | 恢复码 | multiline | 可选 |
 
 ## 云平台账号 `cloud`
 
 | key | label | type | 校验 |
 | --- | --- | --- | --- |
-| provider | 云厂商 | text | 必填 |
+| provider | 云服务商 | text | 必填 |
 | account_id | 账号 ID | text | 可选 |
 | console_url | 控制台 | text | 可选，若填须 `http` 或 `https` |
 | username | 用户名 | text | 可选 |
@@ -100,7 +100,7 @@ interface RecordField {
 | password | 密码 | secret | 可选 |
 | dns_provider | DNS 服务商 | text | 可选 |
 | api_token | API 令牌 | secret | 可选 |
-| expires_at | 到期日 | text | 可选，`YYYY-MM-DD` |
+| expires_at | 到期日期 | text | 可选，`YYYY-MM-DD` |
 | notes | 备注 | multiline | 可选 |
 
 ## 网络设备与 Wi-Fi `network`
@@ -123,13 +123,13 @@ interface RecordField {
 
 | key | label | type | 校验 |
 | --- | --- | --- | --- |
-| service | 服务 | text | 必填 |
+| service | 服务名称 | text | 必填 |
 | account | 账号 | text | 可选 |
 | codes | 恢复码 | multiline | 必填 |
-| method | 方式 | text | 可选 |
-| issued_at | 签发日 | text | 可选，`YYYY-MM-DD` |
+| method | 验证方式 | text | 可选 |
+| issued_at | 签发日期 | text | 可选，`YYYY-MM-DD` |
 | notes | 备注 | multiline | 可选 |
 
 ## 通用 `generic`
 
-无预设字段。至少 1 个自定义键值对。`key` 只能是小写字母、数字、下划线，不以数字开头。
+无预设字段。至少 1 个自定义字段。`key` 只能是小写字母、数字、下划线，不以数字开头。

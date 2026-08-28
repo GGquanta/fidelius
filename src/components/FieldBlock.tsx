@@ -33,7 +33,7 @@ export function FieldBlock({
         <span className="block h-4 max-w-[16rem] rounded-sm bg-hover" aria-hidden />
       ) : (
         <pre className={`overflow-x-auto whitespace-pre-wrap break-all font-mono text-sm leading-relaxed ${long ? "min-h-16" : ""}`}>
-          {field.value || "（空）"}
+          {field.value || "无内容"}
         </pre>
       )}
       {sealed ? (

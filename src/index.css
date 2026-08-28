@@ -31,7 +31,7 @@
   --weight-normal: 400;
   --weight-bold: 600;
 
-  --grey-100: hsl(40, 30%, 98%);
+  --grey-100: hsl(48, 100%, 99.4%);
   --grey-200: hsl(36, 24%, 93%);
   --grey-300: hsl(32, 20%, 86%);
   --grey-400: hsl(28, 16%, 62%); /* disabled only, ~2.7:1 */
@@ -81,7 +81,7 @@
 
   --canvas: var(--grey-100);
   --surface: #ffffff;
-  --hover: hsl(36, 24%, 94%);
+  --hover: hsl(46, 40%, 97.2%);
   --sunken: var(--grey-200);
   --ink: var(--grey-900);
   --muted: var(--grey-700);
@@ -250,7 +250,7 @@ html {
   background-repeat: no-repeat, repeat;
   background-size: 100% 100%, auto;
   background-attachment: fixed, fixed;
-  background-blend-mode: normal, multiply;
+  background-blend-mode: normal, normal;
 }
 
 html.dark {
@@ -266,20 +266,23 @@ html.dark {
   background-blend-mode: normal, normal;
 }
 
-.sidebar-frost {
+.sidebar-frost,
+.folder-tabs {
   background: color-mix(in srgb, var(--canvas) 38%, transparent);
   backdrop-filter: blur(18px) saturate(1.24);
   -webkit-backdrop-filter: blur(18px) saturate(1.24);
 }
 
-html.dark .sidebar-frost {
+html.dark .sidebar-frost,
+html.dark .folder-tabs {
   background: color-mix(in srgb, var(--canvas) 28%, transparent);
   backdrop-filter: blur(20px) saturate(1.2);
   -webkit-backdrop-filter: blur(20px) saturate(1.2);
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .sidebar-frost {
+  .sidebar-frost,
+  .folder-tabs {
     background: var(--canvas);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
@@ -321,6 +324,12 @@ button {
 
 .font-display {
   font-family: var(--font-display);
+}
+
+.font-metric {
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "ss01" 1, "tnum" 1, "lnum" 1;
 }
 
 .mesh-glow {
@@ -367,17 +376,28 @@ button {
 
 .folder-cabinet {
   position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  --folder-stroke: color-mix(in srgb, var(--ink) 24%, var(--surface));
+}
+
+.dark .folder-cabinet {
+  --folder-stroke: color-mix(in srgb, var(--ink) 40%, var(--surface));
 }
 
 .folder-tabs {
   display: flex;
   align-items: stretch;
+  gap: 4px;
   height: 36px;
-  padding: 0 8px;
   overflow-x: auto;
   overflow-y: hidden;
   position: relative;
   z-index: 2;
+  padding: 0 10px;
+  box-shadow: inset 0 -1px 0 var(--folder-stroke);
   scrollbar-width: none;
 }
 
@@ -389,7 +409,7 @@ button {
   position: relative;
   z-index: 0;
   flex: 1 1 0;
-  min-width: 88px;
+  min-width: 112px;
   max-width: 240px;
   height: 36px;
   box-sizing: border-box;
@@ -397,18 +417,14 @@ button {
   flex-direction: row;
   align-items: center;
   gap: 6px;
-  margin-left: -8px;
   padding: 0 14px 0 16px;
-  border: none;
-  border-radius: 10px 10px 0 0;
-  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
   color: var(--muted);
   white-space: nowrap;
   outline: none;
-}
-
-.folder-tab:first-child {
-  margin-left: 0;
 }
 
 .folder-tab:focus-visible {
@@ -417,18 +433,30 @@ button {
 
 .folder-tab:hover {
   z-index: 1;
-  background: var(--hover);
+  background: color-mix(in srgb, var(--ink) 16%, transparent);
+  border-color: color-mix(in srgb, var(--ink) 18%, transparent);
   color: var(--ink);
 }
 
-.folder-tab.is-active {
+html.dark .folder-tab {
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
+  border-color: color-mix(in srgb, var(--ink) 16%, transparent);
+}
+
+html.dark .folder-tab:hover {
+  background: color-mix(in srgb, var(--ink) 20%, transparent);
+  border-color: color-mix(in srgb, var(--ink) 24%, transparent);
+}
+
+.folder-tab.is-active,
+.folder-tab.is-active:hover,
+html.dark .folder-tab.is-active,
+html.dark .folder-tab.is-active:hover {
   z-index: 3;
   background: var(--surface);
   color: var(--ink);
-}
-
-.folder-tab.is-active:hover {
-  background: var(--surface);
+  border-color: var(--folder-stroke);
+  box-shadow: 0 1px 0 var(--surface);
 }
 
 .folder-tab.is-active::before,
@@ -436,48 +464,65 @@ button {
   content: "";
   position: absolute;
   bottom: 0;
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
+  box-sizing: content-box;
   pointer-events: none;
+  border-style: solid;
+  border-color: var(--folder-stroke);
+  background: transparent;
 }
 
 .folder-tab.is-active::before {
-  left: -10px;
-  border-bottom-right-radius: 10px;
-  box-shadow: 4px 4px 0 4px var(--surface);
+  left: -9px;
+  border-width: 0 1px 1px 0;
+  border-bottom-right-radius: 8px;
+  box-shadow: 2px 2px 0 1px var(--surface);
 }
 
 .folder-tab.is-active::after {
-  right: -10px;
-  border-bottom-left-radius: 10px;
-  box-shadow: -4px 4px 0 4px var(--surface);
-}
-
-.folder-tab:not(.is-active):not(:hover) + .folder-tab:not(.is-active):not(:hover)::before {
-  content: "";
-  position: absolute;
-  left: 8px;
-  top: 10px;
-  bottom: 10px;
-  width: 1px;
-  background: var(--line);
+  right: -9px;
+  border-width: 0 0 1px 1px;
+  border-bottom-left-radius: 8px;
+  box-shadow: -2px 2px 0 1px var(--surface);
 }
 
 .folder-sheet {
   position: relative;
   z-index: 1;
-  margin-top: -1px;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
   min-height: 480px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--folder-stroke);
+  border-top: none;
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
   background: var(--surface);
   box-shadow: var(--elev-3);
 }
 
+.record-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr));
+  gap: var(--space-3);
+}
+
 .side-tree {
-  margin: 4px 0 0 22px;
-  padding: 4px 0 4px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: var(--space-2) 0 0 22px;
+  padding: var(--space-1) 0 var(--space-1) 12px;
   border-left: 1px solid var(--line);
+}
+
+.side-hit:hover {
+  background: color-mix(in srgb, var(--ink) 16%, transparent);
+  color: var(--ink);
+}
+
+html.dark .side-hit:hover {
+  background: color-mix(in srgb, var(--ink) 20%, transparent);
 }
 
 .card-ear {

@@ -26,7 +26,7 @@ export function StackedBar({ segments }: { segments: ChartSegment[] }) {
           <li key={item.id} className="flex items-center gap-2 text-sm">
             <span className="h-2.5 w-2.5 rounded-full" style={{ background: item.color }} aria-hidden />
             <span className="text-muted">{item.label}</span>
-            <span className="font-mono text-xs text-tertiary">{item.value}</span>
+            <span className="font-metric text-xs text-tertiary">{item.value}</span>
           </li>
         ))}
       </ul>
@@ -75,8 +75,8 @@ export function DonutRing({
           x="80"
           y="84"
           textAnchor="middle"
-          className="fill-ink"
-          style={{ fontSize: 20, fontFamily: "var(--font-display)" }}
+          className="font-metric fill-ink"
+          style={{ fontSize: 20 }}
         >
           {total}
         </text>
@@ -86,7 +86,7 @@ export function DonutRing({
           <li key={item.id} className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 rounded-full" style={{ background: item.color }} aria-hidden />
             <span className="text-muted">{item.label}</span>
-            <span className="font-mono text-xs text-tertiary">{item.value}</span>
+            <span className="font-metric text-xs text-tertiary">{item.value}</span>
           </li>
         ))}
       </ul>
@@ -97,7 +97,7 @@ export function DonutRing({
 export function WeekBars({ values }: { values: number[] }) {
   const max = Math.max(...values, 1);
   return (
-    <div className="flex h-24 items-end gap-1.5" role="img" aria-label="近十二周更新">
+    <div className="flex h-24 items-end gap-1.5" role="img" aria-label="近 12 周更新">
       {values.map((value, index) => (
         <span
           key={index}

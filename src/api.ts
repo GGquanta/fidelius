@@ -103,6 +103,16 @@ export const api = {
   enrollStart: () => request<{ otpauth: string; secret: string }>("/api/enroll/start", { method: "POST" }),
   enrollConfirm: (code: string) =>
     request<{ user: User }>("/api/enroll/confirm", { method: "POST", body: JSON.stringify({ code }) }),
+  resetEnrollStart: (code: string) =>
+    request<{ otpauth: string; secret: string }>("/api/enroll/reset/start", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    }),
+  resetEnrollConfirm: (code: string) =>
+    request<{ user: User; unlocked: boolean }>("/api/enroll/reset/confirm", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    }),
   unlock: (code: string) =>
     request<{ unlocked: boolean; unlockExpiresAt: number }>("/api/unlock", {
       method: "POST",

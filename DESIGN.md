@@ -15,7 +15,7 @@ fidelius/
 
 绑定：
 
-- `FIDELIUS` KV
+- `FIDELIUS` KV（配置里不写 namespace id；本地模拟，生产由部署自动创建）
 - `MASTER_KEY` secret
 - `BOOTSTRAP_ADMIN_EMAIL` var
 - `ASSETS`

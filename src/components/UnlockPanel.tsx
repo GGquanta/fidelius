@@ -14,7 +14,9 @@ export function UnlockPanel({
   onToast: (text: string) => void;
 }) {
   const { doUnlock } = useSession();
+  const [mode, setMode] = useState<"totp" | "recovery">("totp");
   const [code, setCode] = useState("");
+  const [recoveryCode, setRecoveryCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [done, setDone] = useState(false);
@@ -22,7 +24,9 @@ export function UnlockPanel({
 
   useEffect(() => {
     if (!open) {
+      setMode("totp");
       setCode("");
+      setRecoveryCode("");
       setErr("");
       setBusy(false);
       setDone(false);
@@ -32,12 +36,14 @@ export function UnlockPanel({
 
   async function submit(event?: FormEvent) {
     event?.preventDefault();
-    if (submitted.current || code.length !== 6) return;
+    if (submitted.current) return;
+    if (mode === "totp" && code.length !== 6) return;
+    if (mode === "recovery" && !recoveryCode.trim()) return;
     submitted.current = true;
     setBusy(true);
     setErr("");
     try {
-      await doUnlock(code);
+      await doUnlock(mode === "totp" ? { code } : { recoveryCode: recoveryCode.trim() });
       setDone(true);
       onToast("已开锁");
       window.setTimeout(() => onClose(), 480);
@@ -50,10 +56,10 @@ export function UnlockPanel({
   }
 
   useEffect(() => {
-    if (open && code.length === 6 && !busy && !done) {
+    if (open && mode === "totp" && code.length === 6 && !busy && !done) {
       void submit();
     }
-  }, [code, open]);
+  }, [code, open, mode]);
 
   if (!open) return null;
 
@@ -70,18 +76,52 @@ export function UnlockPanel({
           </span>
           <div>
             <h2 className="text-base font-medium">{done ? "已开锁" : "开锁"}</h2>
-            <p className="text-sm text-muted">{done ? "敏感字段已显示" : "请输入验证器中的 6 位验证码"}</p>
+            <p className="text-sm text-muted">
+              {done
+                ? "敏感字段已显示"
+                : mode === "totp"
+                  ? "请输入验证器中的 6 位验证码"
+                  : "请输入一条未使用的恢复码"}
+            </p>
           </div>
         </div>
         <div className="mt-6">
-          <OtpBoxes value={code} onChange={setCode} disabled={busy || done} />
+          {mode === "totp" ? (
+            <OtpBoxes value={code} onChange={setCode} disabled={busy || done} />
+          ) : (
+            <input
+              value={recoveryCode}
+              onChange={(event) => setRecoveryCode(event.target.value.toUpperCase())}
+              placeholder="XXXX-XXXX"
+              autoComplete="off"
+              spellCheck={false}
+              disabled={busy || done}
+              className="w-full rounded-box border border-line-strong bg-canvas px-3 py-2 font-mono text-sm outline-none focus:border-accent"
+            />
+          )}
         </div>
         {err ? <p className="mt-3 text-sm text-danger">{err}</p> : null}
+        {!done ? (
+          <button
+            type="button"
+            className="mt-4 text-sm text-muted hover:text-ink"
+            onClick={() => {
+              setMode(mode === "totp" ? "recovery" : "totp");
+              setErr("");
+              submitted.current = false;
+            }}
+          >
+            {mode === "totp" ? "无法使用验证器？" : "改用验证码"}
+          </button>
+        ) : null}
         <div className="mt-6 flex justify-end gap-3">
           <Button type="button" tone="tertiary" onClick={onClose}>
             取消
           </Button>
-          <Button type="submit" disabled={busy || done || code.length !== 6}>
+          <Button
+            type="submit"
+            disabled={busy || done || (mode === "totp" ? code.length !== 6 : !recoveryCode.trim())}
+          >
             开锁
           </Button>
         </div>

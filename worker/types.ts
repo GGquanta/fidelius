@@ -3,6 +3,7 @@ export const UNLOCK_TTL_SECONDS = 600;
 export const ENROLL_TTL_SECONDS = 600;
 export const TOTP_FAIL_LIMIT = 5;
 export const TOTP_LOCK_SECONDS = 15 * 60;
+export const RECOVERY_CODE_COUNT = 10;
 export const AUDIT_LIMIT = 100;
 export const UNLOCK_COOKIE = "fidelius_unlock";
 
@@ -83,6 +84,7 @@ export const keys = {
   userEmail: (email: string) => `user:email:${email}`,
   totp: (userId: string) => `totp:${userId}`,
   enroll: (userId: string) => `enroll:${userId}`,
+  recovery: (userId: string) => `recovery:${userId}`,
   record: (id: string) => `record:${id}`,
   ownerIndex: (userId: string) => `index:owner:${userId}`,
   sharedIndex: (userId: string) => `index:shared:${userId}`,

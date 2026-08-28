@@ -5,10 +5,11 @@ interface Session {
   user: User | null;
   unlocked: boolean;
   unlockExpiresAt: number | null;
+  recoveryRemaining: number;
   code: "ok" | "not_provisioned" | "disabled" | "loading";
   error: string;
   refresh: () => Promise<void>;
-  doUnlock: (code: string) => Promise<void>;
+  doUnlock: (input: { code?: string; recoveryCode?: string }) => Promise<void>;
   doLock: () => Promise<void>;
 }
 
@@ -18,6 +19,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [unlocked, setUnlocked] = useState(false);
   const [unlockExpiresAt, setUnlockExpiresAt] = useState<number | null>(null);
+  const [recoveryRemaining, setRecoveryRemaining] = useState(0);
   const [code, setCode] = useState<Session["code"]>("loading");
   const [error, setError] = useState("");
 
@@ -28,6 +30,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         setUnlocked(false);
         setUnlockExpiresAt(null);
+        setRecoveryRemaining(0);
         setCode("not_provisioned");
         return;
       }
@@ -35,12 +38,14 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         setUnlocked(false);
         setUnlockExpiresAt(null);
+        setRecoveryRemaining(0);
         setCode("disabled");
         return;
       }
       setUser(me.user);
       setUnlocked(me.unlocked);
       setUnlockExpiresAt(me.unlockExpiresAt);
+      setRecoveryRemaining(me.recoveryRemaining);
       setCode("ok");
     } catch (err) {
       setError(err instanceof Error ? err.message : "无法连接");
@@ -51,10 +56,13 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     void refresh();
   }, [refresh]);
 
-  const doUnlock = useCallback(async (totp: string) => {
-    const result = await api.unlock(totp);
+  const doUnlock = useCallback(async (input: { code?: string; recoveryCode?: string }) => {
+    const result = await api.unlock(input);
     setUnlocked(true);
     setUnlockExpiresAt(result.unlockExpiresAt);
+    if (input.recoveryCode) {
+      setRecoveryRemaining((count) => Math.max(0, count - 1));
+    }
   }, []);
 
   const doLock = useCallback(async () => {
@@ -64,8 +72,18 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, unlocked, unlockExpiresAt, code, error, refresh, doUnlock, doLock }),
-    [user, unlocked, unlockExpiresAt, code, error, refresh, doUnlock, doLock],
+    () => ({
+      user,
+      unlocked,
+      unlockExpiresAt,
+      recoveryRemaining,
+      code,
+      error,
+      refresh,
+      doUnlock,
+      doLock,
+    }),
+    [user, unlocked, unlockExpiresAt, recoveryRemaining, code, error, refresh, doUnlock, doLock],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

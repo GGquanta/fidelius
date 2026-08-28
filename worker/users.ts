@@ -1,4 +1,5 @@
 import { decryptJson, encryptJson, importMasterKey, randomBytes, timingSafeEqual } from "./crypto";
+import { consumeRecoveryCode, countRecoveryRemaining, issueRecoveryCodes } from "./recovery";
 import { newTotpSecret, otpauthUrl, verifyTotp } from "./totp";
 import {
   ApiError,
@@ -130,6 +131,7 @@ export async function disableUser(env: Env, id: string, actor: User): Promise<Us
   user.updatedAt = nowIso();
   await saveUser(env, user);
   await env.FIDELIUS.delete(keys.unlock(id));
+  await env.FIDELIUS.delete(keys.recovery(id));
   return user;
 }
 
@@ -166,7 +168,11 @@ export async function startEnroll(
   return { otpauth: otpauthUrl(user.email, secret), secret };
 }
 
-export async function confirmEnroll(env: Env, user: User, code: string): Promise<User> {
+export async function confirmEnroll(
+  env: Env,
+  user: User,
+  code: string,
+): Promise<{ user: User; recoveryCodes: string[] }> {
   if (user.status === "disabled") throw new ApiError(403, "disabled", "账号已停用");
   if (user.status === "active") throw new ApiError(400, "validation", "已完成绑定");
 
@@ -179,12 +185,13 @@ export async function confirmEnroll(env: Env, user: User, code: string): Promise
   }
 
   payload.confirmedAt = nowIso();
+  const recoveryCodes = await issueRecoveryCodes(env, user.id, master);
   await env.FIDELIUS.put(keys.totp(user.id), await encryptJson(master, payload));
   await env.FIDELIUS.delete(keys.enroll(user.id));
   user.status = "active";
   user.updatedAt = nowIso();
   await saveUser(env, user);
-  return user;
+  return { user, recoveryCodes };
 }
 
 async function readLockout(env: Env, userId: string): Promise<Lockout> {
@@ -209,7 +216,7 @@ async function recordTotpFailure(env: Env, userId: string, lockout: Lockout): Pr
     expirationTtl: TOTP_LOCK_SECONDS,
   });
   if (next.until) throw new ApiError(429, "totp_locked", "验证已锁定，请稍后再试");
-  throw new ApiError(400, "totp_invalid", "验证码不正确");
+  throw new ApiError(400, "totp_invalid", "验证码或恢复码不正确");
 }
 
 async function verifyCurrentTotp(env: Env, user: User, code: string): Promise<void> {
@@ -224,13 +231,45 @@ async function verifyCurrentTotp(env: Env, user: User, code: string): Promise<vo
   await env.FIDELIUS.delete(keys.lockout(user.id));
 }
 
+export async function verifyCurrentFactor(
+  env: Env,
+  user: User,
+  input: { code?: string; recoveryCode?: string },
+): Promise<void> {
+  const recoveryCode = input.recoveryCode?.trim() || "";
+  const code = input.code?.trim() || "";
+  if (recoveryCode) {
+    const lockout = await enforceLockout(env, user.id);
+    const master = await importMasterKey(env.MASTER_KEY);
+    if (!(await consumeRecoveryCode(env, user.id, master, recoveryCode))) {
+      await recordTotpFailure(env, user.id, lockout);
+    }
+    await env.FIDELIUS.delete(keys.lockout(user.id));
+    return;
+  }
+  if (/^\d{6}$/.test(code)) {
+    await verifyCurrentTotp(env, user, code);
+    return;
+  }
+  if (code) {
+    const lockout = await enforceLockout(env, user.id);
+    const master = await importMasterKey(env.MASTER_KEY);
+    if (!(await consumeRecoveryCode(env, user.id, master, code))) {
+      await recordTotpFailure(env, user.id, lockout);
+    }
+    await env.FIDELIUS.delete(keys.lockout(user.id));
+    return;
+  }
+  throw new ApiError(400, "validation", "请填写验证码或恢复码");
+}
+
 export async function startResetEnroll(
   env: Env,
   user: User,
-  code: string,
+  input: { code?: string; recoveryCode?: string },
 ): Promise<{ otpauth: string; secret: string }> {
   if (user.status !== "active") throw new ApiError(403, "pending_enroll", "请先绑定验证器");
-  await verifyCurrentTotp(env, user, code);
+  await verifyCurrentFactor(env, user, input);
 
   const master = await importMasterKey(env.MASTER_KEY);
   const existing = await env.FIDELIUS.get(keys.enroll(user.id));
@@ -245,7 +284,11 @@ export async function startResetEnroll(
   return { otpauth: otpauthUrl(user.email, secret), secret };
 }
 
-export async function confirmResetEnroll(env: Env, user: User, code: string): Promise<User> {
+export async function confirmResetEnroll(
+  env: Env,
+  user: User,
+  code: string,
+): Promise<{ user: User; recoveryCodes: string[] }> {
   if (user.status !== "active") throw new ApiError(403, "pending_enroll", "请先绑定验证器");
 
   const master = await importMasterKey(env.MASTER_KEY);
@@ -257,18 +300,39 @@ export async function confirmResetEnroll(env: Env, user: User, code: string): Pr
   }
 
   payload.confirmedAt = nowIso();
+  const recoveryCodes = await issueRecoveryCodes(env, user.id, master);
   await env.FIDELIUS.put(keys.totp(user.id), await encryptJson(master, payload));
   await env.FIDELIUS.delete(keys.enroll(user.id));
   await env.FIDELIUS.delete(keys.lockout(user.id));
   await lock(env, user.id);
   user.updatedAt = nowIso();
   await saveUser(env, user);
-  return user;
+  return { user, recoveryCodes };
 }
 
-export async function unlock(env: Env, user: User, code: string): Promise<{ token: string; exp: number }> {
+export async function regenerateRecoveryCodes(env: Env, user: User, code: string): Promise<string[]> {
   if (user.status !== "active") throw new ApiError(403, "pending_enroll", "请先绑定验证器");
   await verifyCurrentTotp(env, user, code);
+  const master = await importMasterKey(env.MASTER_KEY);
+  return issueRecoveryCodes(env, user.id, master);
+}
+
+export async function remainingRecoveryCodes(env: Env, userId: string): Promise<number> {
+  try {
+    const master = await importMasterKey(env.MASTER_KEY);
+    return countRecoveryRemaining(env, userId, master);
+  } catch {
+    return 0;
+  }
+}
+
+export async function unlock(
+  env: Env,
+  user: User,
+  input: { code?: string; recoveryCode?: string },
+): Promise<{ token: string; exp: number }> {
+  if (user.status !== "active") throw new ApiError(403, "pending_enroll", "请先绑定验证器");
+  await verifyCurrentFactor(env, user, input);
 
   const token = [...randomBytes(32)].map((b) => b.toString(16).padStart(2, "0")).join("");
   const session: UnlockSession = { token, exp: Date.now() + UNLOCK_TTL_SECONDS * 1000 };

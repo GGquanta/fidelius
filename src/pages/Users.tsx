@@ -1,12 +1,13 @@
 import { FormEvent, useEffect, useState } from "react";
 import { api, type User } from "../api";
 import { Button } from "../components/Button";
-import { errorMessage } from "../session";
+import { errorMessage, useSession } from "../session";
 import { formatTime } from "../templates";
 import { useToast } from "../ui";
 
 export function UsersPage() {
   const toast = useToast();
+  const { user } = useSession();
   const [users, setUsers] = useState<User[]>([]);
   const [limit, setLimit] = useState(10);
   const [occupied, setOccupied] = useState(0);
@@ -23,7 +24,7 @@ export function UsersPage() {
 
   useEffect(() => {
     void load().catch((error) => setErr(errorMessage(error)));
-  }, []);
+  }, [user?.displayName, user?.updatedAt]);
 
   async function create(event: FormEvent) {
     event.preventDefault();

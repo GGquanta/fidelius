@@ -86,39 +86,62 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export function getMe() {
-  return request<{ user: User; unlocked: boolean; unlockExpiresAt: number | null }>("/api/me").catch(
-    (error: unknown) => {
-      if (error instanceof ApiClientError && error.code === "not_provisioned") {
-        return { user: null, unlocked: false, unlockExpiresAt: null, code: "not_provisioned" as const };
-      }
-      if (error instanceof ApiClientError && error.code === "disabled") {
-        return { user: null, unlocked: false, unlockExpiresAt: null, code: "disabled" as const };
-      }
-      throw error;
-    },
-  );
+  return request<{
+    user: User;
+    unlocked: boolean;
+    unlockExpiresAt: number | null;
+    recoveryRemaining: number;
+  }>("/api/me").catch((error: unknown) => {
+    if (error instanceof ApiClientError && error.code === "not_provisioned") {
+      return {
+        user: null,
+        unlocked: false,
+        unlockExpiresAt: null,
+        recoveryRemaining: 0,
+        code: "not_provisioned" as const,
+      };
+    }
+    if (error instanceof ApiClientError && error.code === "disabled") {
+      return {
+        user: null,
+        unlocked: false,
+        unlockExpiresAt: null,
+        recoveryRemaining: 0,
+        code: "disabled" as const,
+      };
+    }
+    throw error;
+  });
 }
 
 export const api = {
   enrollStart: () => request<{ otpauth: string; secret: string }>("/api/enroll/start", { method: "POST" }),
   enrollConfirm: (code: string) =>
-    request<{ user: User }>("/api/enroll/confirm", { method: "POST", body: JSON.stringify({ code }) }),
-  resetEnrollStart: (code: string) =>
+    request<{ user: User; recoveryCodes: string[] }>("/api/enroll/confirm", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    }),
+  resetEnrollStart: (input: { code?: string; recoveryCode?: string }) =>
     request<{ otpauth: string; secret: string }>("/api/enroll/reset/start", {
       method: "POST",
-      body: JSON.stringify({ code }),
+      body: JSON.stringify(input),
     }),
   resetEnrollConfirm: (code: string) =>
-    request<{ user: User; unlocked: boolean }>("/api/enroll/reset/confirm", {
+    request<{ user: User; unlocked: boolean; recoveryCodes: string[] }>("/api/enroll/reset/confirm", {
       method: "POST",
       body: JSON.stringify({ code }),
     }),
-  unlock: (code: string) =>
+  unlock: (input: { code?: string; recoveryCode?: string }) =>
     request<{ unlocked: boolean; unlockExpiresAt: number }>("/api/unlock", {
       method: "POST",
-      body: JSON.stringify({ code }),
+      body: JSON.stringify(input),
     }),
   lock: () => request<{ unlocked: boolean }>("/api/lock", { method: "POST" }),
+  regenerateRecovery: (code: string) =>
+    request<{ recoveryCodes: string[] }>("/api/recovery/regenerate", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    }),
   updateMe: (displayName: string) =>
     request<{ user: User }>("/api/me", {
       method: "PATCH",

@@ -28,7 +28,9 @@ export function RecordDetailPage() {
   const [record, setRecord] = useState<RecordMeta | null>(null);
   const [revealed, setRevealed] = useState<RevealedRecord | null>(null);
   const [audit, setAudit] = useState<AuditEntry[]>([]);
-  const [people, setPeople] = useState<Array<{ id: string; displayName: string; email: string }>>([]);
+  const [people, setPeople] = useState<
+    Array<{ id: string; displayName: string; email: string; status?: string }>
+  >([]);
   const [err, setErr] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [shareId, setShareId] = useState("");
@@ -45,6 +47,7 @@ export function RecordDetailPage() {
           id: item.id,
           displayName: item.displayName,
           email: "email" in item ? item.email : "",
+          status: "status" in item ? item.status : "active",
         })),
       );
     }
@@ -90,7 +93,12 @@ export function RecordDetailPage() {
 
   const fields = revealed?.fields ?? record?.fieldMeta.map((f) => ({ ...f, value: "" })) ?? [];
   const owner = record?.access === "owner";
-  const shareable = people.filter((person) => person.id !== user?.id && !record?.sharedWith.includes(person.id));
+  const shareable = people.filter(
+    (person) =>
+      person.id !== user?.id &&
+      !record?.sharedWith.includes(person.id) &&
+      person.status === "active",
+  );
 
   return (
     <article className="mx-auto max-w-[960px] px-6 py-6">

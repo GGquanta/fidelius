@@ -28,6 +28,7 @@ fidelius/
 | `user:{id}` | 用户元数据 |
 | `user:email:{email}` | `{ userId }` |
 | `totp:{userId}` | 加密 TOTP |
+| `recovery:{userId}` | 加密恢复码哈希 |
 | `record:{id}` | 记录元数据 + 密文 |
 | `index:owner:{userId}` | `{ recordIds: string[] }` |
 | `index:shared:{userId}` | `{ recordIds: string[] }` |
@@ -86,14 +87,15 @@ interface VaultRecord {
 
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
-| GET | `/api/me` | 当前用户、开锁状态、`unlockExpiresAt` |
+| GET | `/api/me` | 当前用户、开锁状态、`unlockExpiresAt`、`recoveryRemaining` |
 | PATCH | `/api/me` | `{ displayName }`，改自己的显示名 |
 | POST | `/api/enroll/start` | 开始绑定验证器，返回 otpauth |
-| POST | `/api/enroll/confirm` | `{ code }` |
-| POST | `/api/enroll/reset/start` | `{ code }` 核对当前 TOTP 后开始更换验证器，返回 otpauth |
-| POST | `/api/enroll/reset/confirm` | `{ code }` 确认新验证器，旧密钥作废并封存 |
-| POST | `/api/unlock` | `{ code }`，返回 `unlockExpiresAt` |
+| POST | `/api/enroll/confirm` | `{ code }`，返回 `{ user, recoveryCodes }` |
+| POST | `/api/enroll/reset/start` | `{ code }` 或 `{ recoveryCode }`，核对后开始更换验证器，返回 otpauth |
+| POST | `/api/enroll/reset/confirm` | `{ code }` 确认新验证器，旧密钥与旧恢复码作废并封存，返回 `{ user, unlocked: false, recoveryCodes }` |
+| POST | `/api/unlock` | `{ code }` 或 `{ recoveryCode }`，返回 `unlockExpiresAt` |
 | POST | `/api/lock` | 封存 |
+| POST | `/api/recovery/regenerate` | `{ code }` 当前验证码，签发新恢复码并作废旧码 |
 | GET | `/api/records` | 元数据列表，`?category=&q=` |
 | POST | `/api/records` | 创建 |
 | GET | `/api/records/:id` | 元数据，无值 |
@@ -158,7 +160,7 @@ interface VaultRecord {
 
 高度五档两段式，阴影色 `hsla(24, 20%, 13%, …)`，alpha `.04–.18`。
 
-字体：Geist Variable（界面）、Outfit Variable（≥30px 展示标题）、Geist Mono（秘密值、密钥、时间）。指标数字用 Geist `tabular-nums`，含统计卡、分类条数、名额、图例与侧栏计数。
+字体：Geist Variable（界面）、Outfit Variable（≥30px 展示标题）、Imperial Script（仅品牌字标「Fidelius」）、Geist Mono（秘密值、密钥、时间）。指标数字用 Geist `tabular-nums`，含统计卡、分类条数、名额、图例与侧栏计数。
 
 图标：Phosphor Regular，导航 16px，瓷砖 20px。
 
@@ -172,7 +174,7 @@ interface VaultRecord {
 2. 品牌氛围光：已登录工作区主栏左上与门页径向 mesh，紫罗兰 + 蜜桃，alpha ≤ 0.08。挂在壳层 `main`，各页共用，不逐页重画
 3. 折页与瓷砖纸面：`linear-gradient(180deg, cat-tint, surface)`
 
-禁止文字渐变、彩虹、紫→青长行程、给所有边框套渐变。
+禁止文字渐变、彩虹、紫→青长行程、给所有边框套渐变。品牌字标「Fidelius」除外：`linear-gradient(180deg, violet-400, violet-600)`，背景裁切成字，不扩散到其他文案。
 
 ### 布局
 
@@ -190,7 +192,7 @@ interface VaultRecord {
 
 侧栏 272px，底为毛玻璃：半透明 canvas + `backdrop-filter` 模糊纸面纹理，与主区用一根 hairline 分开，让纸面坐在前面。`prefers-reduced-transparency` 时退回实色 canvas。结构：
 
-- 顶：印记 36px + 字标 + 脚注「团队保险库」，下方一根分隔
+- 顶：印记 30px（与 favicon 同源的角色透明图）+ 花体字标「Fidelius」（30px Imperial Script，violet-400 → violet-600 垂直短行程，紫罗兰 + 蜜桃辉光，四角星火花与细流线），与印记间距 24px，不是链接，无脚注、无分隔线。字标辉光与火花是印记装饰，不把粒子铺到导航。`prefers-reduced-motion` 时火花静止。文档标题为「Fidelius · 密钥保管库」
 - 工作台：概览
 - 保险库：可展开树。父行是「保险库」+ 总数 + 折页箭头；子项含「全部」与 10 个分类（20px 瓷砖、名称、计数），由左侧 1px 轨成树。子项行高 36px，左右内边距 12px，与父行同档，行距 12px。点选写入 `/vault?category=`。父行只负责展开/进入全部，不高亮成与子项抢权重
 - 侧栏未选中项 hover 用 ink 以 16% 混入透明底（暗色 20%），在毛玻璃上才能读出；不用 `--hover`（与 canvas 过近）。选中仍为 accent-soft。
@@ -244,13 +246,14 @@ interface VaultRecord {
 
 团队：同宽 surface 纸面，无返回。纸内抬头（标题 + 名额计数）+ 10 格进度 + 添加表单 + 成员列表。输入框用 canvas 底，标签在输入框上方。行前姓名首字圆印。
 
-绑定页左说明右 QR 瓷砖，6 格验证码。QR 用当前 accent。空状态用大号分类瓷砖 + 新建。开锁为居中 `--elev-5` 面板，支持粘贴整串。个人资料同样是居中 `--elev-5` 面板：显示名可改（1–32 字），邮箱与角色只读，可更换验证器。弹层用 portal 挂到 `document.body`，避开侧栏 `backdrop-filter` 的 stacking context；全屏 `ink/40` 遮罩，面板在视口居中，`z-50`。点遮罩或 Escape 关闭。更换验证器分两步：当前 6 位数字，再扫新二维码并填写新码。
+绑定页左说明右 QR 瓷砖，6 格验证码；核对通过后进入第二步展示 10 条恢复码，可下载、复制，点「已保存」进入保险库。QR 用当前 accent，须转成 hex 再交给 `qrcode`（该库不接受 `hsl()`）。空状态用大号分类瓷砖 + 新建。开锁为居中 `--elev-5` 面板，支持粘贴整串；「无法使用验证器？」切换为恢复码输入。个人资料同样是居中 `--elev-5` 面板：显示名可改（1–32 字），邮箱与角色只读，显示恢复码剩余条数，可生成或重新生成恢复码，可更换验证器。弹层用 portal 挂到 `document.body`，避开侧栏 `backdrop-filter` 的 stacking context；全屏 `ink/40` 遮罩，面板在视口居中，`z-50`。点遮罩或 Escape 关闭。更换验证器：当前 6 位数字或一条恢复码，再扫新二维码并填写新码，最后保存新恢复码。详情分享名单只列出 `active` 成员。
 
-文案用中文。按钮动词与结果一致：开锁、封存、复制、下载、分享、收回、保存。禁止营销套话、文言和直译腔。
+文案用中文。按钮动词与结果一致：开锁、封存、复制、下载、分享、收回、保存、已保存。禁止营销套话、文言和直译腔。
 
 固定用语：
 
 - TOTP：绑定验证器、完成绑定、更换验证器；不用「编排」
+- 恢复码：恢复码；不用「备份码」「备用码」
 - 应用：验证器；不用「认证器」
 - 6 位数字：验证码；不用「确认码」
 - 查看密文：查看、显示；不用「揭开」
@@ -260,7 +263,8 @@ interface VaultRecord {
 
 ### 组件
 
-- `SealMark` 印记（紫→蜜桃）
+- `SealMark` 印记：与 favicon 同源的角色透明图，侧栏 30px（门页 40px），不加瓷砖底
+- `Wordmark` 品牌字标：30px Imperial Script + 紫罗兰短行程渐变 + 辉光 / 火花 / 流线，只用于侧栏印记旁
 - `AppShell` 应用侧栏 + 顶栏
 - `BackLink` 返回
 - `Button` 主 / 次 / 三级 / 危险，按层级分档
@@ -270,6 +274,7 @@ interface VaultRecord {
 - `StatCard` 统计卡
 - `charts` `StackedBar` `DonutRing` `WeekBars`
 - `OtpBoxes` 六格验证码
+- `RecoveryCodesCard` 恢复码清单
 - `UnlockPanel` 开锁面板
 - `Modal` 全屏遮罩弹层
 - `ProfilePanel` 个人资料

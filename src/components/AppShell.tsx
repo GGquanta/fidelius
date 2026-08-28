@@ -9,7 +9,7 @@ import {
   Vault,
 } from "@phosphor-icons/react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { Link, NavLink, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { NavLink, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import { useSession } from "../session";
 import { CATEGORIES } from "../templates";
@@ -17,6 +17,7 @@ import { useTheme } from "../ui";
 import { CategoryIcon, type CategoryId } from "./CategoryIcon";
 import { ProfilePanel } from "./ProfilePanel";
 import { SealMark } from "./SealMark";
+import { Wordmark } from "./Wordmark";
 
 function isSensitivePath(pathname: string) {
   return pathname.startsWith("/records/");
@@ -103,14 +104,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="h-[100dvh] md:grid md:grid-cols-[272px_1fr]">
       <aside className="sidebar-frost flex h-auto flex-col border-b border-line md:h-[100dvh] md:border-b-0 md:border-r">
-        <Link to="/" className="mx-3 mt-3 flex items-center gap-3 rounded-lg px-2 py-3 hover:bg-hover">
-          <SealMark size={36} />
-          <span className="min-w-0">
-            <span className="block text-base font-medium tracking-[-0.04em]">Fidelius</span>
-            <span className="mt-0.5 block text-[12px] leading-snug text-tertiary">团队保险库</span>
-          </span>
-        </Link>
-        <div className="mx-5 mt-1 h-px bg-line" />
+        <div className="brand-lockup mx-3 mt-4 mb-3 flex items-center gap-5 px-2">
+          <SealMark size={30} />
+          <Wordmark />
+        </div>
 
         <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
           <p className="px-3 pb-2 text-[12px] tracking-[0.08em] text-tertiary">工作台</p>

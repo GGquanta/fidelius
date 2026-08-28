@@ -1,35 +1,38 @@
 import { FormEvent, useEffect, useState } from "react";
-import QRCode from "qrcode";
 import { api } from "../api";
 import { Button } from "../components/Button";
 import { OtpBoxes } from "../components/OtpBoxes";
+import { RecoveryCodesCard } from "../components/RecoveryCodesCard";
 import { SealMark } from "../components/SealMark";
 import { errorMessage, useSession } from "../session";
+import { totpQr } from "../totp-qr";
 
 export function EnrollPage() {
-  const { refresh } = useSession();
+  const { refresh, user } = useSession();
   const [otpauth, setOtpauth] = useState("");
   const [secret, setSecret] = useState("");
   const [qr, setQr] = useState("");
   const [code, setCode] = useState("");
+  const [codes, setCodes] = useState<string[]>([]);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     void api
       .enrollStart()
       .then(async (result) => {
+        if (cancelled) return;
         setOtpauth(result.otpauth);
         setSecret(result.secret);
-        setQr(
-          await QRCode.toDataURL(result.otpauth, {
-            margin: 1,
-            width: 220,
-            color: { dark: "#8F49DF", light: "#FFFEFC" },
-          }),
-        );
+        setQr(await totpQr(result.otpauth, 220));
       })
-      .catch((error) => setErr(errorMessage(error)));
+      .catch((error) => {
+        if (!cancelled) setErr(errorMessage(error));
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function confirm(event: FormEvent) {
@@ -37,13 +40,37 @@ export function EnrollPage() {
     setBusy(true);
     setErr("");
     try {
-      await api.enrollConfirm(code);
-      await refresh();
+      const result = await api.enrollConfirm(code);
+      setCodes(result.recoveryCodes);
     } catch (error) {
       setErr(errorMessage(error));
     } finally {
       setBusy(false);
     }
+  }
+
+  if (codes.length > 0) {
+    return (
+      <main className="mesh-glow relative min-h-[100dvh] overflow-hidden">
+        <div className="rise mx-auto grid min-h-[100dvh] max-w-4xl items-center gap-10 px-6 py-16 md:grid-cols-2">
+          <div>
+            <SealMark size={40} />
+            <h1 className="font-display mt-6 text-4xl tracking-tight">保存恢复码</h1>
+            <p className="mt-3 max-w-[42ch] text-muted">
+              请下载或复制这 10 条恢复码，放到离线安全的地方。之后无法再查看明文。
+            </p>
+          </div>
+          <div className="rounded-xl border border-line bg-surface p-6 shadow-elev-3">
+            <RecoveryCodesCard
+              email={user?.email ?? ""}
+              codes={codes}
+              savedLabel="已保存"
+              onSaved={() => void refresh()}
+            />
+          </div>
+        </div>
+      </main>
+    );
   }
 
   return (
@@ -68,7 +95,7 @@ export function EnrollPage() {
             <OtpBoxes value={code} onChange={setCode} disabled={busy} />
             {err ? <p className="mt-3 text-sm text-danger">{err}</p> : null}
             <Button type="submit" disabled={busy || code.length !== 6} className="mt-6">
-              完成绑定
+              继续
             </Button>
           </form>
         </div>

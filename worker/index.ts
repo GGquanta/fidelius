@@ -31,6 +31,8 @@ import {
   lock,
   parseUnlockCookie,
   publicUser,
+  regenerateRecoveryCodes,
+  remainingRecoveryCodes,
   resolveOrBootstrapUser,
   startEnroll,
   startResetEnroll,
@@ -115,12 +117,13 @@ app.get("/api/me", async (c) => {
     );
   }
   if (user.status === "disabled") {
-    return c.json({ user: publicUser(user), unlocked: false, unlockExpiresAt: null, code: "disabled" }, 403);
+    return c.json({ user: publicUser(user), unlocked: false, unlockExpiresAt: null, recoveryRemaining: 0, code: "disabled" }, 403);
   }
   return c.json({
     user: publicUser(user),
     unlocked: c.get("unlocked"),
     unlockExpiresAt: c.get("unlockExpiresAt"),
+    recoveryRemaining: await remainingRecoveryCodes(c.env, user.id),
   });
 });
 
@@ -140,29 +143,29 @@ app.post("/api/enroll/start", async (c) => {
 app.post("/api/enroll/confirm", async (c) => {
   const user = requireUser(c);
   const body = await c.req.json<{ code?: string }>();
-  const updated = await confirmEnroll(c.env, user, body.code ?? "");
-  return c.json({ user: publicUser(updated) });
+  const result = await confirmEnroll(c.env, user, body.code ?? "");
+  return c.json({ user: publicUser(result.user), recoveryCodes: result.recoveryCodes });
 });
 
 app.post("/api/enroll/reset/start", async (c) => {
   const user = requireActive(c);
-  const body = await c.req.json<{ code?: string }>();
-  const result = await startResetEnroll(c.env, user, body.code ?? "");
+  const body = await c.req.json<{ code?: string; recoveryCode?: string }>();
+  const result = await startResetEnroll(c.env, user, body);
   return c.json(result);
 });
 
 app.post("/api/enroll/reset/confirm", async (c) => {
   const user = requireActive(c);
   const body = await c.req.json<{ code?: string }>();
-  const updated = await confirmResetEnroll(c.env, user, body.code ?? "");
+  const result = await confirmResetEnroll(c.env, user, body.code ?? "");
   deleteCookie(c, UNLOCK_COOKIE, { path: "/" });
-  return c.json({ user: publicUser(updated), unlocked: false });
+  return c.json({ user: publicUser(result.user), unlocked: false, recoveryCodes: result.recoveryCodes });
 });
 
 app.post("/api/unlock", async (c) => {
   const user = requireActive(c);
-  const body = await c.req.json<{ code?: string }>();
-  const session = await unlock(c.env, user, body.code ?? "");
+  const body = await c.req.json<{ code?: string; recoveryCode?: string }>();
+  const session = await unlock(c.env, user, body);
   setUnlockCookie(c, user.id, session.token);
   return c.json({ unlocked: true, unlockExpiresAt: session.exp });
 });
@@ -172,6 +175,13 @@ app.post("/api/lock", async (c) => {
   await lock(c.env, user.id);
   deleteCookie(c, UNLOCK_COOKIE, { path: "/" });
   return c.json({ unlocked: false });
+});
+
+app.post("/api/recovery/regenerate", async (c) => {
+  const user = requireActive(c);
+  const body = await c.req.json<{ code?: string }>();
+  const recoveryCodes = await regenerateRecoveryCodes(c.env, user, body.code ?? "");
+  return c.json({ recoveryCodes });
 });
 
 app.get("/api/records", async (c) => {

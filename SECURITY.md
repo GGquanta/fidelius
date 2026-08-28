@@ -8,10 +8,10 @@
 
 - 未通过 Access 的请求不能进入应用
 - 未开通、未绑定验证器、已停用用户不能读取记录
-- KV 中的敏感字段与 TOTP 密钥不以明文存储
+- KV 中的敏感字段、TOTP 密钥与恢复码哈希不以明文存储
 - 列表接口永不返回秘密值
-- 日志不打印密钥、TOTP、PEM
-- TOTP 不可在线爆破
+- 日志不打印密钥、TOTP、恢复码、PEM
+- TOTP 与恢复码不可在线爆破
 
 ### 不防护
 
@@ -41,7 +41,9 @@
 
 用户 TOTP 密钥单独存 `totp:{userId}`，同样用主密钥加密。`otpauth` 与明文密钥只在绑定开始当次返回，确认后不可再读。
 
-更换验证器须先校验当前 TOTP（计入同一套锁定），再把新密钥写入 `enroll:{userId}`。旧密钥在确认新码之前仍有效。确认后覆盖 `totp:{userId}`、删除绑定临时键，并立即删除开锁会话与 Cookie。丢失验证器不能自助重置。
+恢复码在绑定确认、更换验证器确认或重新生成时签发 10 条。明文只在当次响应中返回。KV `recovery:{userId}` 只保存 SHA-256 哈希（绑定 `userId`），再用主密钥加密。核销时等时长比较全部剩余哈希后再决定命中。列表、`GET /api/me` 与资料页只暴露剩余条数，不可再读明文。
+
+更换验证器须先校验当前 TOTP 或一条未使用的恢复码（计入同一套锁定），再把新密钥写入 `enroll:{userId}`。旧密钥在确认新码之前仍有效。确认后覆盖 `totp:{userId}`、签发新恢复码并作废旧码、删除绑定临时键，并立即删除开锁会话与 Cookie。丢失验证器且没有剩余恢复码时不能自助重置，须管理员停用并重建用户。停用用户时删除 `recovery:{id}`。
 
 IV / nonce 每次加密重新随机生成，与密文一并存储。
 
@@ -49,7 +51,7 @@ IV / nonce 每次加密重新随机生成，与密文一并存储。
 
 ## 开锁会话
 
-`POST /api/unlock` 校验 TOTP 后：
+`POST /api/unlock` 校验 TOTP 或一条未使用的恢复码后：
 
 - 写入 KV `unlock:{userId}`，TTL 600 秒
 - 设置 HttpOnly、Secure、SameSite=Strict Cookie `fidelius_unlock`
@@ -60,7 +62,7 @@ IV / nonce 每次加密重新随机生成，与密文一并存储。
 
 ## TOTP 防爆破
 
-键 `lockout:{userId}` 记录失败次数。连续 5 次失败后 15 分钟内拒绝校验。成功开锁清零。锁定期间返回 `{ code: "totp_locked" }`，不提示剩余次数。
+键 `lockout:{userId}` 记录失败次数。连续 5 次失败后 15 分钟内拒绝校验。成功开锁或成功核销恢复码清零。锁定期间返回 `{ code: "totp_locked" }`，不提示剩余次数。验证码或恢复码错误均返回 `{ code: "totp_invalid" }`，文案不区分哪一种。
 
 TOTP 允许当前窗口及前后各一个窗口（共约 90 秒），防止时钟偏移。
 
@@ -77,8 +79,8 @@ TOTP 允许当前窗口及前后各一个窗口（共约 90 秒），防止时�
 
 ## 密钥轮转
 
-轮转 `MASTER_KEY` 需要离线重加密全部 `record:*` 与 `totp:*`。第一期不提供自动轮转工具。丢失主密钥等于丢失全部秘密，无法恢复。
+轮转 `MASTER_KEY` 需要离线重加密全部 `record:*`、`totp:*` 与 `recovery:*`。第一期不提供自动轮转工具。丢失主密钥等于丢失全部秘密，无法恢复。
 
 ## 日志纪律
 
-结构化日志只允许：request id、user id、record id、action、error code。禁止记录 Authorization、Cookie、TOTP、字段值、PEM。
+结构化日志只允许：request id、user id、record id、action、error code。禁止记录 Authorization、Cookie、TOTP、恢复码、字段值、PEM。

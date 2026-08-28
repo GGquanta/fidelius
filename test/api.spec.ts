@@ -38,7 +38,10 @@ async function enroll(email: string) {
   if (confirm.res.status !== 200) {
     throw new Error(`enroll confirm failed ${JSON.stringify(confirm.body)}`);
   }
-  return secret;
+  return {
+    secret,
+    recoveryCodes: (confirm.body.recoveryCodes as string[]) ?? [],
+  };
 }
 
 async function unlock(email: string, secret: string) {
@@ -59,9 +62,10 @@ describe("fidelius api", () => {
   });
 
   it("bootstraps admin, enrolls, and unlocks", async () => {
-    const secret = await enroll(ADMIN);
+    const { secret } = await enroll(ADMIN);
     const me = await json("/api/me", { headers: headers(ADMIN) });
     expect(me.body.user).toMatchObject({ email: ADMIN, role: "admin", status: "active" });
+    expect(me.body.recoveryRemaining).toBe(10);
 
     const locked = await json("/api/records", { headers: headers(ADMIN) });
     expect(locked.res.status).toBe(200);
@@ -88,7 +92,7 @@ describe("fidelius api", () => {
   });
 
   it("keeps secrets out of list and requires unlock to reveal", async () => {
-    const secret = await enroll(ADMIN);
+    const { secret } = await enroll(ADMIN);
     const created = await json("/api/records", {
       method: "POST",
       headers: headers(ADMIN),
@@ -125,7 +129,7 @@ describe("fidelius api", () => {
   });
 
   it("shares read-only and forbids foreign edits", async () => {
-    const adminSecret = await enroll(ADMIN);
+    const { secret: adminSecret } = await enroll(ADMIN);
     await json("/api/users", {
       method: "POST",
       headers: headers(ADMIN),
@@ -373,7 +377,7 @@ describe("fidelius api", () => {
   });
 
   it("lets an active user reset totp after proving the current code", async () => {
-    const oldSecret = await enroll(ADMIN);
+    const { secret: oldSecret } = await enroll(ADMIN);
     const { cookie } = await unlock(ADMIN, oldSecret);
     const unlocked = await json("/api/me", {
       headers: { ...headers(ADMIN), Cookie: cookie.split(";")[0] },
@@ -427,5 +431,135 @@ describe("fidelius api", () => {
 
     const { cookie: nextCookie } = await unlock(ADMIN, newSecret);
     expect(nextCookie).toContain("fidelius_unlock=");
+    expect(confirm.body.recoveryCodes).toHaveLength(10);
+  });
+
+  it("issues one-time recovery codes and unlocks with them", async () => {
+    const { recoveryCodes } = await enroll(ADMIN);
+    expect(recoveryCodes).toHaveLength(10);
+    expect(recoveryCodes.every((code) => /^[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$/.test(code))).toBe(
+      true,
+    );
+
+    const me = await json("/api/me", { headers: headers(ADMIN) });
+    expect(me.body.recoveryRemaining).toBe(10);
+    expect(me.body).not.toHaveProperty("recoveryCodes");
+
+    const used = recoveryCodes[0];
+    const unlocked = await json("/api/unlock", {
+      method: "POST",
+      headers: headers(ADMIN),
+      body: JSON.stringify({ recoveryCode: used }),
+    });
+    expect(unlocked.res.status).toBe(200);
+    expect(unlocked.body.unlocked).toBe(true);
+
+    const remaining = await json("/api/me", { headers: headers(ADMIN) });
+    expect(remaining.body.recoveryRemaining).toBe(9);
+    expect(JSON.stringify(remaining.body)).not.toContain(used);
+
+    const replay = await json("/api/unlock", {
+      method: "POST",
+      headers: headers(ADMIN),
+      body: JSON.stringify({ recoveryCode: used }),
+    });
+    expect(replay.res.status).toBe(400);
+    expect(replay.body.code).toBe("totp_invalid");
+
+    const again = await json("/api/unlock", {
+      method: "POST",
+      headers: headers(ADMIN),
+      body: JSON.stringify({ recoveryCode: recoveryCodes[1] }),
+    });
+    expect(again.res.status).toBe(200);
+    const after = await json("/api/me", { headers: headers(ADMIN) });
+    expect(after.body.recoveryRemaining).toBe(8);
+  });
+
+  it("locks after five failed recovery code attempts", async () => {
+    await enroll(ADMIN);
+    let last = { res: new Response(), body: {} as Record<string, unknown> };
+    for (let i = 0; i < 5; i += 1) {
+      last = await json("/api/unlock", {
+        method: "POST",
+        headers: headers(ADMIN),
+        body: JSON.stringify({ recoveryCode: "0000-0000" }),
+      });
+    }
+    expect(last.res.status).toBe(429);
+    expect(last.body.code).toBe("totp_locked");
+  });
+
+  it("lets reset start with a recovery code and invalidates old codes", async () => {
+    const { secret: oldSecret, recoveryCodes } = await enroll(ADMIN);
+    const start = await json("/api/enroll/reset/start", {
+      method: "POST",
+      headers: headers(ADMIN),
+      body: JSON.stringify({ recoveryCode: recoveryCodes[0] }),
+    });
+    expect(start.res.status).toBe(200);
+    const newSecret = String(start.body.secret);
+
+    const confirm = await json("/api/enroll/reset/confirm", {
+      method: "POST",
+      headers: headers(ADMIN),
+      body: JSON.stringify({ code: await generateTotp(newSecret) }),
+    });
+    expect(confirm.res.status).toBe(200);
+    const nextCodes = confirm.body.recoveryCodes as string[];
+    expect(nextCodes).toHaveLength(10);
+    expect(nextCodes).not.toContain(recoveryCodes[0]);
+
+    const oldCode = await json("/api/unlock", {
+      method: "POST",
+      headers: headers(ADMIN),
+      body: JSON.stringify({ recoveryCode: recoveryCodes[1] }),
+    });
+    expect(oldCode.res.status).toBe(400);
+
+    const fresh = await json("/api/unlock", {
+      method: "POST",
+      headers: headers(ADMIN),
+      body: JSON.stringify({ recoveryCode: nextCodes[0] }),
+    });
+    expect(fresh.res.status).toBe(200);
+    expect(oldSecret).toBeTruthy();
+  });
+
+  it("regenerates recovery codes only with totp and discards the old set", async () => {
+    const { secret, recoveryCodes } = await enroll(ADMIN);
+    const withRecovery = await json("/api/recovery/regenerate", {
+      method: "POST",
+      headers: headers(ADMIN),
+      body: JSON.stringify({ recoveryCode: recoveryCodes[0] }),
+    });
+    expect(withRecovery.res.status).toBe(400);
+
+    const issued = await json("/api/recovery/regenerate", {
+      method: "POST",
+      headers: headers(ADMIN),
+      body: JSON.stringify({ code: await generateTotp(secret) }),
+    });
+    expect(issued.res.status).toBe(200);
+    const nextCodes = issued.body.recoveryCodes as string[];
+    expect(nextCodes).toHaveLength(10);
+    expect(nextCodes).not.toEqual(recoveryCodes);
+
+    const stale = await json("/api/unlock", {
+      method: "POST",
+      headers: headers(ADMIN),
+      body: JSON.stringify({ recoveryCode: recoveryCodes[0] }),
+    });
+    expect(stale.res.status).toBe(400);
+
+    const fresh = await json("/api/unlock", {
+      method: "POST",
+      headers: headers(ADMIN),
+      body: JSON.stringify({ recoveryCode: nextCodes[0] }),
+    });
+    expect(fresh.res.status).toBe(200);
+
+    const me = await json("/api/me", { headers: headers(ADMIN) });
+    expect(me.body.recoveryRemaining).toBe(9);
   });
 });

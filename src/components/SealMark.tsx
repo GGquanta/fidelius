@@ -1,19 +1,16 @@
-import { Shield } from "@phosphor-icons/react";
+import seal from "../assets/seal.png";
 
 export function SealMark({ size = 28 }: { size?: number }) {
-  const icon = Math.round(size * 0.55);
   return (
-    <span
-      className="inline-flex items-center justify-center rounded-tile text-white shadow-elev-1"
-      style={{
-        width: size,
-        height: size,
-        background: "linear-gradient(180deg, var(--violet-500), var(--violet-600))",
-        boxShadow: "inset 0 1px 0 hsl(270, 80%, 74%)",
-      }}
+    <img
+      src={seal}
+      alt=""
+      width={size}
+      height={size}
+      draggable={false}
       aria-hidden
-    >
-      <Shield size={icon} />
-    </span>
+      className="inline-block shrink-0 object-contain"
+      style={{ width: size, height: size }}
+    />
   );
 }

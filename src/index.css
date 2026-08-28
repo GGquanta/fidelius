@@ -1,6 +1,7 @@
 @import "@fontsource-variable/geist";
 @import "@fontsource-variable/geist-mono";
 @import "@fontsource-variable/outfit";
+@import "@fontsource/imperial-script";
 @import "tailwindcss";
 
 /* Fidelius tokens: warm paper, violet ink */
@@ -201,6 +202,7 @@
 @theme {
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Outfit Variable", "Geist Variable", ui-sans-serif, sans-serif;
+  --font-script: "Imperial Script", "Geist Variable", cursive;
   --font-mono: "Geist Mono Variable", ui-monospace, monospace;
   --color-canvas: var(--canvas);
   --color-surface: var(--surface);
@@ -342,6 +344,96 @@ button {
   background:
     radial-gradient(ellipse 80% 50% at 8% -8%, hsla(270, 64%, 72%, 0.1), transparent 52%),
     radial-gradient(ellipse 55% 40% at 92% 0%, hsla(16, 80%, 60%, 0.07), transparent 46%);
+}
+
+.wordmark {
+  position: relative;
+  display: block;
+  isolation: isolate;
+}
+
+.wordmark-fx {
+  position: absolute;
+  inset: -14px -18px -12px -14px;
+  width: calc(100% + 32px);
+  height: calc(100% + 26px);
+  overflow: visible;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.wordmark-name {
+  position: relative;
+  z-index: 1;
+  display: block;
+  font-family: var(--font-script);
+  font-size: 30px;
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: 0.02em;
+  color: transparent;
+  background-image: linear-gradient(180deg, var(--violet-400), var(--violet-600));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter:
+    drop-shadow(0 0 5px color-mix(in srgb, var(--violet-400) 55%, transparent))
+    drop-shadow(0 0 10px color-mix(in srgb, var(--peach-500) 32%, transparent));
+  animation: wordmark-glow 3.2s ease-in-out infinite;
+}
+
+.dark .wordmark-name {
+  background-image: linear-gradient(180deg, var(--violet-300), var(--violet-500));
+}
+
+.wordmark-wisp {
+  fill: none;
+  stroke-linecap: round;
+  stroke-dasharray: 36 52;
+  opacity: 0.55;
+}
+
+.wordmark-wisp-a {
+  stroke: var(--violet-400);
+  stroke-width: 1.15;
+  animation: wordmark-wisp 5.6s linear infinite;
+}
+
+.wordmark-wisp-b {
+  stroke: var(--peach-500);
+  stroke-width: 0.9;
+  animation: wordmark-wisp 7.2s linear infinite reverse;
+}
+
+.wordmark-spark {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: wordmark-spark 2.4s ease-in-out infinite;
+}
+
+.spark-a {
+  fill: var(--violet-400);
+  animation-delay: 0s;
+}
+
+.spark-b {
+  fill: var(--peach-500);
+  animation-delay: 0.7s;
+}
+
+.spark-c {
+  fill: var(--violet-300);
+  animation-delay: 1.4s;
+}
+
+.brand-lockup:hover .wordmark-name {
+  filter:
+    drop-shadow(0 0 6px color-mix(in srgb, var(--violet-400) 70%, transparent))
+    drop-shadow(0 0 14px color-mix(in srgb, var(--peach-500) 42%, transparent));
+}
+
+.brand-lockup:hover .wordmark-spark {
+  animation-duration: 1.4s;
 }
 
 .btn-primary {
@@ -544,6 +636,38 @@ html.dark .side-hit:hover {
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+@keyframes wordmark-glow {
+  0%,
+  100% {
+    filter:
+      drop-shadow(0 0 4px color-mix(in srgb, var(--violet-400) 45%, transparent))
+      drop-shadow(0 0 8px color-mix(in srgb, var(--peach-500) 24%, transparent));
+  }
+  50% {
+    filter:
+      drop-shadow(0 0 7px color-mix(in srgb, var(--violet-400) 70%, transparent))
+      drop-shadow(0 0 14px color-mix(in srgb, var(--peach-500) 40%, transparent));
+  }
+}
+
+@keyframes wordmark-wisp {
+  to {
+    stroke-dashoffset: -88;
+  }
+}
+
+@keyframes wordmark-spark {
+  0%,
+  100% {
+    opacity: 0.35;
+    scale: 0.72;
+  }
+  50% {
+    opacity: 1;
+    scale: 1.08;
   }
 }
 

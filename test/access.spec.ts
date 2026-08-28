@@ -7,7 +7,7 @@ const TEAM = "https://example.cloudflareaccess.com";
 const AUD = "aud-not-real";
 const MASTER = "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=";
 
-function env(overrides: Partial<Env> = {}): Env {
+function env(overrides: Record<string, unknown> = {}): Env {
   return {
     ENVIRONMENT: "production",
     MASTER_KEY: MASTER,
@@ -17,7 +17,7 @@ function env(overrides: Partial<Env> = {}): Env {
     FIDELIUS: {} as KVNamespace,
     ASSETS: { fetch: async () => new Response(null) },
     ...overrides,
-  } as Env;
+  } as unknown as Env;
 }
 
 describe("production Access JWT", () => {

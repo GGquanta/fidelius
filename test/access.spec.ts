@@ -39,6 +39,41 @@ describe("production Access JWT", () => {
     ).rejects.toMatchObject({ status: 401, code: "unauthenticated" });
   });
 
+  it("ignores a non-Access TEAM_DOMAIN and still reads the JWT", async () => {
+    const { publicKey, privateKey } = await generateKeyPair("RS256");
+    const jwk = await exportJWK(publicKey);
+    jwk.kid = "k1";
+    jwk.alg = "RS256";
+    jwk.use = "sig";
+    const token = await new SignJWT({ email: "Admin@Example.com" })
+      .setProtectedHeader({ alg: "RS256", kid: "k1" })
+      .setIssuer(TEAM)
+      .setAudience(AUD)
+      .setExpirationTime("5m")
+      .sign(privateKey);
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input).startsWith(`${TEAM}/cdn-cgi/access/certs`)) {
+        return Response.json({ keys: [jwk] });
+      }
+      return originalFetch(input, init);
+    }) as typeof fetch;
+
+    try {
+      const email = await resolveEmail(
+        new Request("https://fidelius.test/api/me", {
+          headers: { "Cf-Access-Jwt-Assertion": token },
+        }),
+        env({ TEAM_DOMAIN: "https://fidelius.qubitlab.cc", ACCESS_AUD: undefined }),
+        {},
+      );
+      expect(email).toBe("admin@example.com");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it("reads email from a valid Access JWT", async () => {
     const { publicKey, privateKey } = await generateKeyPair("RS256");
     const jwk = await exportJWK(publicKey);

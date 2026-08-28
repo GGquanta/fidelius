@@ -22,9 +22,9 @@
 
 ## Access
 
-生产环境必须启用 Cloudflare Access。Worker 优先使用 `ctx.access.getIdentity()` 读取邮箱。启用 Static Assets 时，内部 router **不会**把 `ctx.access` 传给用户 Worker；此时必须校验请求头 `Cf-Access-Jwt-Assertion`（JWKS + `iss` + `aud`），从 payload 取邮箱。不要信任未校验的 `cf-access-authenticated-user-email`。
+生产环境必须启用 Cloudflare Access。Worker 优先使用 `ctx.access.getIdentity()` 读取邮箱。启用 Static Assets 时，内部 router **不会**把 `ctx.access` 传给用户 Worker；此时必须校验请求头 `Cf-Access-Jwt-Assertion`：用 JWT 的 `iss`（须为 `https://<team>.cloudflareaccess.com`）拉 JWKS，校验签名后再取 `email`。不要信任未校验的 `cf-access-authenticated-user-email`。
 
-`TEAM_DOMAIN` 为 `https://<team>.cloudflareaccess.com`，`ACCESS_AUD` 为 Access 应用的 Audience 标签，均为普通 var，不是 Secret。
+`TEAM_DOMAIN` 与 `ACCESS_AUD` 为可选普通 var。未配置时仍按 JWT 自身的 `iss` 校验；若配置了则必须与令牌一致。不要把它们做成 Secret。
 
 本地开发使用 `wrangler.jsonc` 的 `access.dev` 模拟身份。若当前 Wrangler 不识别该字段，非 production 环境会回退到 `BOOTSTRAP_ADMIN_EMAIL`。生产必须设置 `ENVIRONMENT=production` 并启用 Access。不要把模拟身份用于生产。
 

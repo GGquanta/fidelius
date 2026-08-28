@@ -47,8 +47,8 @@ npm run dev
 
 KV 绑定不要写占位 id。部署时 Wrangler 会自动创建 `FIDELIUS` 命名空间。
 
-1. 生产分支 `main`。Build command 设为 `npm run build:production`（或构建变量 `CLOUDFLARE_ENV=production` 再跑 `npm run build`）。Deploy command：`npx wrangler deploy`。关闭非生产分支构建。
-2. Worker → **Settings → Variables and Secrets**（运行时，不是 Builds 构建变量）：Secret `MASTER_KEY`；Var `BOOTSTRAP_ADMIN_EMAIL` 必须是首任管理员的 Access 邮箱。`TEAM_DOMAIN` / `ACCESS_AUD` 可选。`env.production` 的 wrangler 里只有 `ENVIRONMENT`，其余靠 Dashboard + `keep_vars`。
+1. 生产分支 `main`。Build command 设为 `npm run build:production`。Deploy command **必须**带 `--keep-vars`：`npx wrangler deploy --keep-vars`（或 `npm run deploy`）。不要用裸的 `npx wrangler deploy`：Wrangler 默认会先删掉 Dashboard 里的全部 plaintext var，再只写入配置文件里的键。关闭非生产分支构建。
+2. Worker → **Settings → Variables and Secrets**（运行时，不是 Builds 构建变量）：Secret `MASTER_KEY`；Var `BOOTSTRAP_ADMIN_EMAIL` 必须是首任管理员的 Access 邮箱。`TEAM_DOMAIN` / `ACCESS_AUD` 可选。这三项不要写进 `wrangler.jsonc` 的 `env.production.vars`（`vars` 不可继承，生产配置里只有 `ENVIRONMENT`）。`keep_vars` 只能写在 wrangler **顶层**，写在 `env.production` 里无效。
 3. Worker → Access → All traffic。自定义域名在 Access 之后再绑。`workers_dev` 与 Preview URL 已在 `env.production` 关闭。
 
 丢失 `MASTER_KEY` 无法恢复已有记录。不要把 `MASTER_KEY` 写进 `wrangler.jsonc`。顶层 `access.dev` 只给本地，不要当生产身份。

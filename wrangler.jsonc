@@ -8,6 +8,8 @@
     "enabled": true
   },
   "upload_source_maps": true,
+  // 必须写在顶层。写在 env.production 里会被忽略，部署时会删掉 Dashboard 里的 var。
+  "keep_vars": true,
   "vars": {
     "ENVIRONMENT": "development",
     "BOOTSTRAP_ADMIN_EMAIL": "admin@example.com",
@@ -36,9 +38,11 @@
   },
   "env": {
     "production": {
+      "name": "fidelius",
       "workers_dev": false,
       "preview_urls": false,
-      "keep_vars": true,
+      // vars 不可继承：这里只能写生产需要覆盖的键。Dashboard 里的
+      // BOOTSTRAP_ADMIN_EMAIL / TEAM_DOMAIN / ACCESS_AUD 靠顶层 keep_vars 保留。
       "vars": {
         "ENVIRONMENT": "production"
       },

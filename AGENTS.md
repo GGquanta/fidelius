@@ -18,6 +18,7 @@
 - 列表与 GET 详情不得返回秘密值
 - 随机数用 Web Crypto，比较用等时长
 - 不要把 `MASTER_KEY` 写进 `wrangler.jsonc`
+- 生产 Dashboard var（`BOOTSTRAP_ADMIN_EMAIL`、`TEAM_DOMAIN`、`ACCESS_AUD`）不要写进 `env.production.vars`；`keep_vars` 必须在 wrangler 顶层；部署带 `--keep-vars`
 
 ## 设计禁区
 

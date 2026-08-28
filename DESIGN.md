@@ -17,9 +17,11 @@ fidelius/
 
 - `FIDELIUS` KV（配置里不写 namespace id；本地模拟，生产由部署自动创建）
 - `MASTER_KEY` secret
-- `BOOTSTRAP_ADMIN_EMAIL` var
+- `BOOTSTRAP_ADMIN_EMAIL` var（生产由 Dashboard 注入，不要写进 `env.production.vars`）
 - `TEAM_DOMAIN`、`ACCESS_AUD` var（生产校验 Access JWT；由 Dashboard 注入）
 - `ASSETS`
+
+`vars` 对 named environment 不可继承。`env.production.vars` 只有 `ENVIRONMENT=production`。Dashboard 里多出来的 plaintext var 靠 wrangler **顶层** `keep_vars` 以及部署命令 `--keep-vars` 保留；`keep_vars` 写在 `env.*` 下会被忽略，下一次部署会删掉这些变量。`MASTER_KEY` 是 Secret，部署不会删。
 
 ## KV 键
 

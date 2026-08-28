@@ -7,7 +7,7 @@
     "build": "tsc -b && vite build",
     "build:production": "CLOUDFLARE_ENV=production tsc -b && CLOUDFLARE_ENV=production vite build",
     "preview": "npm run build && vite preview",
-    "deploy": "wrangler deploy",
+    "deploy": "wrangler deploy --keep-vars",
     "types": "wrangler types",
     "test": "vitest run",
     "test:watch": "vitest",

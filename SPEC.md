@@ -59,6 +59,8 @@ Fidelius 是部署在 Cloudflare Workers 上的小团队敏感信息保险库。
 - `createdAt`、`updatedAt`
 - 审计日志（最近 100 条；详情按页拉取，每页 10 条）
 
+`title` 与 `description` 为明文元数据，列表与详情会返回；所有者未开锁也可修改。`fields` 的值须开锁后才能更新。已有记录的 `category` 不可更改。
+
 分类：`server`、`database`、`ssl`、`apikey`、`login`、`cloud`、`domain`、`network`、`recovery`、`generic`。模板见 `docs/templates.md`。
 
 ## 分享与删除

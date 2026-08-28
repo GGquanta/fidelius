@@ -1,5 +1,6 @@
 import { LockSimple, LockSimpleOpen } from "@phosphor-icons/react";
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useExitPresence } from "../fx";
 import { errorMessage, useSession } from "../session";
 import { Button } from "./Button";
@@ -24,6 +25,7 @@ export function UnlockPanel({
   const [shake, setShake] = useState(0);
   const [done, setDone] = useState(false);
   const submitted = useRef(false);
+  const closeTimer = useRef(0);
 
   useEffect(() => {
     if (!open) {
@@ -37,6 +39,24 @@ export function UnlockPanel({
     }
   }, [open]);
 
+  useEffect(() => {
+    return () => window.clearTimeout(closeTimer.current);
+  }, []);
+
+  useEffect(() => {
+    if (!shown) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [shown, onClose]);
+
   async function submit(event?: FormEvent) {
     event?.preventDefault();
     if (submitted.current) return;
@@ -49,7 +69,8 @@ export function UnlockPanel({
       await doUnlock(mode === "totp" ? { code } : { recoveryCode: recoveryCode.trim() });
       setDone(true);
       onToast("已开锁");
-      window.setTimeout(() => onClose(), 480);
+      window.clearTimeout(closeTimer.current);
+      closeTimer.current = window.setTimeout(() => onClose(), 480);
     } catch (error) {
       submitted.current = false;
       setErr(errorMessage(error));
@@ -67,22 +88,28 @@ export function UnlockPanel({
 
   if (!shown) return null;
 
-  return (
+  return createPortal(
     <div
       className={`fx-overlay fixed inset-0 z-30 grid place-items-center bg-ink/25 p-4 ${exiting ? "is-exit" : ""}`}
       onClick={onClose}
+      role="presentation"
     >
       <form
         onSubmit={(event) => void submit(event)}
         onClick={(event) => event.stopPropagation()}
         className={`${exiting ? "fx-exit" : "rise"} w-[min(92vw,380px)] rounded-xl border border-line bg-surface p-6 shadow-elev-5`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="unlock-title"
       >
         <div className="flex items-center gap-3">
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-tile bg-accent-soft text-accent">
             {done ? <LockSimpleOpen size={20} /> : <LockSimple size={20} />}
           </span>
           <div>
-            <h2 className="text-base font-medium">{done ? "已开锁" : "开锁"}</h2>
+            <h2 id="unlock-title" className="text-base font-medium">
+              {done ? "已开锁" : "开锁"}
+            </h2>
             <p className="text-sm text-muted">
               {done
                 ? "敏感字段已显示"
@@ -144,14 +171,25 @@ export function UnlockPanel({
           </Button>
         </div>
       </form>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
-export function SensitiveUnlock({ onToast }: { onToast: (text: string) => void }) {
+export function SensitiveUnlock({
+  onToast,
+  sealedHint = "敏感内容已封存，开锁后可查看。",
+}: {
+  onToast: (text: string) => void;
+  sealedHint?: string;
+}) {
   const { unlocked, doLock } = useSession();
   const [open, setOpen] = useState(false);
   const [locking, setLocking] = useState(false);
+
+  useEffect(() => {
+    if (unlocked) setOpen(false);
+  }, [unlocked]);
 
   if (unlocked) {
     return (
@@ -185,7 +223,7 @@ export function SensitiveUnlock({ onToast }: { onToast: (text: string) => void }
         <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-tile bg-surface text-peach-ink">
           <LockSimple size={16} />
         </span>
-        <p className="min-w-0 flex-1 text-sm text-peach-ink">敏感内容已封存，开锁后可查看。</p>
+        <p className="min-w-0 flex-1 text-sm text-peach-ink">{sealedHint}</p>
         <Button type="button" onClick={() => setOpen(true)}>
           开锁
         </Button>

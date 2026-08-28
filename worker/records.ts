@@ -136,25 +136,41 @@ export async function updateRecord(
   user: User,
   id: string,
   input: {
-    title: string;
-    description: string;
-    category: Category;
-    fields: RecordField[];
+    title?: string;
+    description?: string;
+    category?: Category;
+    fields?: RecordField[];
   },
+  unlocked: boolean,
 ) {
   const { record, access } = await getRecordForUser(env, user, id);
   if (access !== "owner") throw new ApiError(403, "forbidden", "仅所有者可修改");
-  const fields = validateRecordInput(input.category, input.title, input.fields);
-  const master = await importMasterKey(env.MASTER_KEY);
-  const secrets: Record<string, string> = {};
-  for (const field of fields) secrets[field.key] = field.value;
-  const encrypted = await encryptSecrets(master, secrets);
-  record.title = input.title.trim();
-  record.description = input.description.trim();
-  record.category = input.category;
-  record.fieldMeta = fields.map(({ key, label, type }) => ({ key, label, type }));
-  record.wrappedDek = encrypted.wrappedDek;
-  record.secretsCipher = encrypted.secretsCipher;
+  if (input.category !== undefined && input.category !== record.category) {
+    throw new ApiError(400, "validation", "分类不可更改");
+  }
+
+  if (input.fields !== undefined) {
+    if (!unlocked) throw new ApiError(401, "unlock_required", "请先开锁");
+    const titleForValidation = input.title !== undefined ? input.title : record.title;
+    const fields = validateRecordInput(record.category, titleForValidation, input.fields);
+    const master = await importMasterKey(env.MASTER_KEY);
+    const secrets: Record<string, string> = {};
+    for (const field of fields) secrets[field.key] = field.value;
+    const encrypted = await encryptSecrets(master, secrets);
+    record.fieldMeta = fields.map(({ key, label, type }) => ({ key, label, type }));
+    record.wrappedDek = encrypted.wrappedDek;
+    record.secretsCipher = encrypted.secretsCipher;
+  }
+
+  if (input.title !== undefined) {
+    const title = input.title.trim();
+    if (!title) throw new ApiError(400, "validation", "标题不能为空");
+    record.title = title;
+  }
+  if (input.description !== undefined) {
+    record.description = input.description.trim();
+  }
+
   record.updatedAt = nowIso();
   await putJson(env.FIDELIUS, keys.record(record.id), record);
   await appendAudit(env, record.id, {
@@ -162,7 +178,10 @@ export async function updateRecord(
     actorId: user.id,
     actorEmail: user.email,
     action: "update",
-    detail: record.fieldMeta.map((f) => f.key).join(","),
+    detail:
+      input.fields !== undefined
+        ? record.fieldMeta.map((f) => f.key).join(",")
+        : "title,description",
   });
   return metaOf(record, "owner");
 }

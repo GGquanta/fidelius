@@ -128,6 +128,90 @@ describe("fidelius api", () => {
     expect(JSON.stringify(revealed.body)).toContain("test-password-not-real");
   });
 
+  it("updates title without unlock, rejects field and category changes", async () => {
+    const { secret } = await enroll(ADMIN);
+    const fields = [
+      { key: "site", label: "网站或应用", type: "text", value: "intranet" },
+      { key: "username", label: "账号", type: "text", value: "apollo" },
+      { key: "password", label: "密码", type: "secret", value: "test-password-not-real" },
+    ];
+    const created = await json("/api/records", {
+      method: "POST",
+      headers: headers(ADMIN),
+      body: JSON.stringify({
+        title: "jump-host",
+        description: "lab gateway",
+        category: "login",
+        fields,
+      }),
+    });
+    expect(created.res.status).toBe(201);
+    const record = created.body.record as { id: string };
+
+    const meta = await json(`/api/records/${record.id}`, {
+      method: "PATCH",
+      headers: headers(ADMIN),
+      body: JSON.stringify({ title: "jump-host-renamed", description: "lab gateway updated" }),
+    });
+    expect(meta.res.status).toBe(200);
+    expect(meta.body.record).toMatchObject({
+      title: "jump-host-renamed",
+      description: "lab gateway updated",
+      category: "login",
+    });
+
+    const blocked = await json(`/api/records/${record.id}`, {
+      method: "PATCH",
+      headers: headers(ADMIN),
+      body: JSON.stringify({
+        fields: fields.map((field) =>
+          field.key === "password" ? { ...field, value: "wiped-should-fail" } : field,
+        ),
+      }),
+    });
+    expect(blocked.res.status).toBe(401);
+    expect(blocked.body.code).toBe("unlock_required");
+
+    const moved = await json(`/api/records/${record.id}`, {
+      method: "PATCH",
+      headers: headers(ADMIN),
+      body: JSON.stringify({ category: "generic" }),
+    });
+    expect(moved.res.status).toBe(400);
+    expect(moved.body.code).toBe("validation");
+    const still = await json(`/api/records/${record.id}`, { headers: headers(ADMIN) });
+    expect(still.body.record).toMatchObject({ title: "jump-host-renamed", category: "login" });
+
+    const { cookie } = await unlock(ADMIN, secret);
+    const cookieHeader = cookie.split(";")[0];
+    const revealed = await json(`/api/records/${record.id}/reveal`, {
+      method: "POST",
+      headers: { ...headers(ADMIN), Cookie: cookieHeader },
+    });
+    expect(revealed.res.status).toBe(200);
+    expect(JSON.stringify(revealed.body)).toContain("test-password-not-real");
+    expect(JSON.stringify(revealed.body)).not.toContain("wiped-should-fail");
+
+    const full = await json(`/api/records/${record.id}`, {
+      method: "PATCH",
+      headers: { ...headers(ADMIN), Cookie: cookieHeader },
+      body: JSON.stringify({
+        title: "jump-host-renamed",
+        description: "lab gateway updated",
+        fields: fields.map((field) =>
+          field.key === "password" ? { ...field, value: "test-password-not-real-2" } : field,
+        ),
+      }),
+    });
+    expect(full.res.status).toBe(200);
+
+    const revealedAgain = await json(`/api/records/${record.id}/reveal`, {
+      method: "POST",
+      headers: { ...headers(ADMIN), Cookie: cookieHeader },
+    });
+    expect(JSON.stringify(revealedAgain.body)).toContain("test-password-not-real-2");
+  });
+
   it("shares read-only and forbids foreign edits", async () => {
     const { secret: adminSecret } = await enroll(ADMIN);
     await json("/api/users", {
@@ -589,8 +673,6 @@ describe("fidelius api", () => {
         body: JSON.stringify({
           title: "jump-host-audit",
           description: `lab gateway ${i}`,
-          category: "login",
-          fields,
         }),
       });
       expect(patch.res.status).toBe(200);

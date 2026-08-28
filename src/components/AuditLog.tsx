@@ -24,10 +24,11 @@ export function AuditLog({ recordId, revision }: { recordId: string; revision: n
   const sentinelRef = useRef<HTMLLIElement>(null);
   const inflight = useRef(false);
   const loaded = useRef(0);
+  const seq = useRef(0);
   const hasMore = entries.length < total;
 
   useEffect(() => {
-    let cancelled = false;
+    const token = ++seq.current;
     inflight.current = true;
     loaded.current = 0;
     setBusy(true);
@@ -37,21 +38,20 @@ export function AuditLog({ recordId, revision }: { recordId: string; revision: n
     void api
       .audit(recordId, { offset: 0, limit: PAGE })
       .then((log) => {
-        if (cancelled) return;
+        if (token !== seq.current) return;
         setEntries(log.entries);
         setTotal(log.total);
         loaded.current = log.entries.length;
       })
       .catch((error) => {
-        if (!cancelled) setErr(errorMessage(error));
+        if (token !== seq.current) return;
+        setErr(errorMessage(error));
       })
       .finally(() => {
+        if (token !== seq.current) return;
         inflight.current = false;
-        if (!cancelled) setBusy(false);
+        setBusy(false);
       });
-    return () => {
-      cancelled = true;
-    };
   }, [recordId, revision]);
 
   useEffect(() => {
@@ -63,17 +63,23 @@ export function AuditLog({ recordId, revision }: { recordId: string; revision: n
       (hits) => {
         if (!hits.some((hit) => hit.isIntersecting)) return;
         if (inflight.current || loaded.current >= total) return;
+        const token = seq.current;
         inflight.current = true;
         setBusy(true);
         void api
           .audit(recordId, { offset: loaded.current, limit: PAGE })
           .then((log) => {
+            if (token !== seq.current) return;
             setEntries((prev) => [...prev, ...log.entries]);
             setTotal(log.total);
             loaded.current += log.entries.length;
           })
-          .catch((error) => setErr(errorMessage(error)))
+          .catch((error) => {
+            if (token !== seq.current) return;
+            setErr(errorMessage(error));
+          })
           .finally(() => {
+            if (token !== seq.current) return;
             inflight.current = false;
             setBusy(false);
           });

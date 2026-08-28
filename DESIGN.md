@@ -103,7 +103,7 @@ interface VaultRecord {
 | GET | `/api/records` | 元数据列表，`?category=&q=` |
 | POST | `/api/records` | 创建 |
 | GET | `/api/records/:id` | 元数据，无值 |
-| PATCH | `/api/records/:id` | 所有者更新 |
+| PATCH | `/api/records/:id` | 所有者部分更新：`title` / `description` 未开锁可改；带 `fields` 须开锁，否则 `unlock_required`；`category` 不可改 |
 | DELETE | `/api/records/:id` | 所有者删除 |
 | POST | `/api/records/:id/reveal` | 需开锁，返回字段值 |
 | POST | `/api/records/:id/share` | `{ userId }` |
@@ -164,7 +164,7 @@ interface VaultRecord {
 
 高度五档两段式，阴影色 `hsla(24, 20%, 13%, …)`，alpha `.04–.18`。
 
-字体：Geist Variable（界面）、Outfit Variable（≥30px 展示标题）、Imperial Script（仅品牌字标「Fidelius」）、Geist Mono（秘密值、密钥、时间）。指标数字用 Geist `tabular-nums`，含统计卡、分类条数、名额、图例与侧栏计数。
+字体：DM Sans Variable（拉丁）、霞鹜 975 圆体 SC 400（汉字，自托管 WOFF2）、Imperial Script（仅品牌字标「Fidelius」）、Geist Mono（秘密值、密钥、时间）。≥30px 展示标题同一套。指标数字用 DM Sans `tabular-nums`，含统计卡、分类条数、名额、图例与侧栏计数。字体一律自托管，禁止 `fonts.googleapis.com` / `fonts.gstatic.com`。
 
 图标：Phosphor Regular，导航 16px，瓷砖 20px。
 
@@ -216,7 +216,7 @@ interface VaultRecord {
 数据全部由 `GET /api/records` 与 `GET /api/users` 在前端聚合，不新增聚合接口。
 
 - 问候 + 新建。记录列表未到时统计、图表、瓷砖计数与近更为骨架，不要把 `0` 或「暂无记录」当数据条目
-- 四张统计卡：全部 / 我的 / 他人分享 / 我分享的，Geist 48–60px tabular 数字
+- 四张统计卡：全部 / 我的 / 他人分享 / 我分享的，DM Sans 48–60px tabular 数字
 - 分类分布：横向堆叠条 + 图例（色块 + 名称 + 计数）
 - 分类瓷砖网格：跳 `/vault?category=`。每格是索引卡：左分类瓷砖 + 名称 + 最近更新（空则「暂无记录」），右 36px tabular 条数、竖直居中，不加单位。折角用分类浅底，横排占满格宽，不把元素撑到四角
 - 字段类型：text / secret / multiline 环形图（只读 `fieldMeta`）
@@ -252,7 +252,7 @@ interface VaultRecord {
 - 删除在抬头为危险浅底，确认弹窗内才是红色实心主按钮
 - 分享成员用自定义 `Select`，不用原生 `<select>`；选项带姓名首字圆印，菜单 portal 到 `document.body`，避免纸面 `overflow` 裁切
 
-表单：与详情同宽的 surface 纸面，返回在纸外。纸内 10 分类选择网格，字段区只用边框与 canvas 底，不加阴影。新建默认分类为通用；从保险库某分类页签或空状态进入时带 `?category=` 预选该分类。编辑时分类不可改。编辑页同样有返回。
+表单：与详情同宽的 surface 纸面，返回在纸外。纸内字段区只用边框与 canvas 底，不加阴影。新建用 10 分类选择网格，默认分类为通用；从保险库某分类页签或空状态进入时带 `?category=` 预选该分类。编辑时分类只读（瓷砖 + 名称，不是禁用网格）。未开锁可改并保存标题与描述，不展示字段列表；字段区换成相对 surface 纸面可辨的 `sunken` 大卡（高度约 320px），文案居中「字段已封存。开锁后才能改。」；已开锁才显示字段并可改。保存：未开锁只提交标题和描述；已开锁提交标题、描述和字段，不传分类。提示：未开锁写「分类创建后不能改。未开锁时保存只提交标题和描述；开锁后才能改字段。」；已开锁写「分类创建后不能改。已开锁，保存会写入标题、描述和字段。」编辑页同样有返回。中途开锁只补字段明文，不覆盖已改的标题与描述。
 
 团队：同宽 surface 纸面，无返回。纸内抬头（标题 + 名额计数）+ 10 格进度 + 添加表单 + 成员列表。输入框用 canvas 底，标签在输入框上方。行前姓名首字圆印。
 
@@ -277,7 +277,7 @@ interface VaultRecord {
 - `Wordmark` 品牌字标：30px Imperial Script + 紫罗兰短行程渐变 + 辉光 / 火花 / 流线，只用于侧栏印记旁
 - `AppShell` 应用侧栏 + 顶栏
 - `BackLink` 返回
-- `Button` `ButtonLink` 主 / 次 / 三级 / 危险实心；另有 `accent` `peach` `danger-soft` 同档软底，以色相分工。文案一律 Geist 14 / 400，链接与按钮同一套类。`Button` 的 `busy` 为进行中：禁用、`aria-busy`、左侧自旋印，标签仍是原动词
+- `Button` `ButtonLink` 主 / 次 / 三级 / 危险实心；另有 `accent` `peach` `danger-soft` 同档软底，以色相分工。文案一律 DM Sans 14 / 400，链接与按钮同一套类。`Button` 的 `busy` 为进行中：禁用、`aria-busy`、左侧自旋印，标签仍是原动词
 - `Skeleton` 骨架条：`.fx-shimmer`，形状贴近终态
 - `Select` 自定义列表选择，canvas 底、surface 菜单、`--elev-3`
 - `FolderTabs` 文件柜折页

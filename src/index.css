@@ -1,8 +1,16 @@
-@import "@fontsource-variable/geist";
+@import "@fontsource-variable/dm-sans";
 @import "@fontsource-variable/geist-mono";
-@import "@fontsource-variable/outfit";
 @import "@fontsource/imperial-script";
 @import "tailwindcss";
+
+@font-face {
+  font-family: "LXGW 975 Yuan SC";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/lxgw-975-yuan-sc-400.woff2") format("woff2");
+  unicode-range: U+2E80-2EFF, U+2FF0-2FFF, U+3000-303F, U+31C0-31EF, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF;
+}
 
 /* Fidelius tokens: warm paper, violet ink */
 
@@ -207,9 +215,9 @@
 }
 
 @theme {
-  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Outfit Variable", "Geist Variable", ui-sans-serif, sans-serif;
-  --font-script: "Imperial Script", "Geist Variable", cursive;
+  --font-sans: "DM Sans Variable", "LXGW 975 Yuan SC", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "DM Sans Variable", "LXGW 975 Yuan SC", ui-sans-serif, sans-serif;
+  --font-script: "Imperial Script", "DM Sans Variable", cursive;
   --font-mono: "Geist Mono Variable", ui-monospace, monospace;
   --color-canvas: var(--canvas);
   --color-surface: var(--surface);
@@ -307,8 +315,7 @@ body,
 
 body {
   font-family: var(--font-sans);
-  font-feature-settings: "ss01" 1;
-  letter-spacing: -0.011em;
+  letter-spacing: -0.006em;
 }
 
 button {
@@ -331,7 +338,7 @@ button {
 .font-metric {
   font-family: var(--font-sans);
   font-variant-numeric: tabular-nums lining-nums;
-  font-feature-settings: "ss01" 1, "tnum" 1, "lnum" 1;
+  font-feature-settings: "tnum" 1, "lnum" 1;
 }
 
 .mesh-glow {

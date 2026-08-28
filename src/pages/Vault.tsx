@@ -8,7 +8,7 @@ import { FolderTabs } from "../components/FolderTabs";
 import { RecordCard } from "../components/RecordCard";
 import { LoadingRegion, Skeleton } from "../components/Skeleton";
 import { errorMessage } from "../session";
-import { CATEGORIES, CATEGORY_LABEL } from "../templates";
+import { CATEGORIES, CATEGORY_LABEL, newRecordPath } from "../templates";
 
 export function VaultPage() {
   const [params, setParams] = useSearchParams();
@@ -66,7 +66,7 @@ export function VaultPage() {
           <p className="text-[12px] tracking-[0.08em] text-tertiary">记录</p>
           <h1 className="font-display mt-1 text-3xl tracking-tight">{title}</h1>
         </div>
-        <Link to="/new" viewTransition className="btn-primary fx-hover fx-press inline-flex items-center gap-1.5 rounded-box px-4 py-2 text-sm">
+        <Link to={newRecordPath(category)} viewTransition className="btn-primary fx-hover fx-press inline-flex items-center gap-1.5 rounded-box px-4 py-2 text-sm">
           <Plus size={16} />
           新建
         </Link>

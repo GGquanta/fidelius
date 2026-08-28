@@ -1,6 +1,6 @@
 # 分类填写模板
 
-模板只约束创建/编辑表单与校验。存储统一为：
+模板只约束创建表单，以及已开锁且提交了 `fields` 的更新。仅改标题与描述的更新不走字段校验。存储统一为：
 
 ```ts
 type FieldType = "text" | "secret" | "multiline";
@@ -9,7 +9,7 @@ interface RecordField {
   key: string;
   label: string;
   type: FieldType;
-  value: string; // 仅在 create/update/reveal 中出现明文
+  value: string; // 仅在 create、带 fields 的 update、reveal 中出现明文
 }
 ```
 

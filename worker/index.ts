@@ -237,12 +237,18 @@ app.patch("/api/records/:id", async (c) => {
     category?: Category;
     fields?: RecordField[];
   }>();
-  const record = await updateRecord(c.env, user, c.req.param("id"), {
-    title: body.title ?? "",
-    description: body.description ?? "",
-    category: body.category ?? "generic",
-    fields: body.fields ?? [],
-  });
+  const record = await updateRecord(
+    c.env,
+    user,
+    c.req.param("id"),
+    {
+      title: body.title,
+      description: body.description,
+      category: body.category,
+      fields: body.fields,
+    },
+    c.get("unlocked"),
+  );
   return c.json({ record });
 });
 

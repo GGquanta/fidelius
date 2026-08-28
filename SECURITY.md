@@ -60,7 +60,7 @@ IV / nonce 每次加密重新随机生成，与密文一并存储。
 
 `POST /api/lock` 删除会话与 Cookie。
 
-`reveal` 必须同时满足：Cookie 有效、KV 会话存在、会话属于当前用户。
+`reveal` 必须同时满足：Cookie 有效、KV 会话存在、会话属于当前用户。带 `fields` 的 `PATCH /api/records/:id` 同样须开锁；未开锁提交字段返回 `{ code: "unlock_required" }`。仅改 `title` / `description` 不须开锁，且不得重加密或改动 `wrappedDek`、`secretsCipher`、`fieldMeta`、`category`。已有记录的分类不可更改。
 
 ## TOTP 防爆破
 

@@ -59,13 +59,20 @@ export function RecordDetailPage() {
       setRevealed(null);
       return;
     }
+    let cancelled = false;
     void api
       .reveal(id)
       .then((result) => {
+        if (cancelled) return;
         setRevealed(result.record);
         setAuditRevision((n) => n + 1);
       })
-      .catch((error) => setErr(errorMessage(error)));
+      .catch((error) => {
+        if (!cancelled) setErr(errorMessage(error));
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [unlocked, id]);
 
   function download(label: string, value: string) {
@@ -137,7 +144,7 @@ export function RecordDetailPage() {
                 <FieldBlock
                   key={field.key}
                   field={field}
-                  sealed={!revealed}
+                  sealed={!unlocked || !revealed}
                   onCopy={(value) => {
                     void navigator.clipboard.writeText(value);
                     toast("已复制");
@@ -219,6 +226,7 @@ export function RecordDetailPage() {
                               .unshare(id, uid)
                               .then(() => load())
                               .then(() => setAuditRevision((n) => n + 1))
+                              .catch((error) => setErr(errorMessage(error)))
                               .finally(() => setActing(null));
                           }}
                         >

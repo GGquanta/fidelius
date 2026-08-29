@@ -7,11 +7,13 @@ export function Modal({
   onClose,
   labelledBy,
   children,
+  panelClassName = "w-[min(92vw,420px)]",
 }: {
   open: boolean;
   onClose: () => void;
   labelledBy: string;
   children: ReactNode;
+  panelClassName?: string;
 }) {
   const openedAt = useRef(0);
   const { shown, exiting } = useExitPresence(open, 280);
@@ -49,7 +51,7 @@ export function Modal({
         aria-modal="true"
         aria-labelledby={labelledBy}
         onClick={(event) => event.stopPropagation()}
-        className={`${exiting ? "fx-exit" : "rise"} max-h-[min(88dvh,720px)] w-[min(92vw,420px)] overflow-y-auto rounded-xl border border-line bg-surface p-6 shadow-elev-5`}
+        className={`${exiting ? "fx-exit" : "rise"} max-h-[min(88dvh,720px)] ${panelClassName} overflow-y-auto rounded-xl border border-line bg-surface p-6 shadow-elev-5`}
       >
         {children}
       </div>

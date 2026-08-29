@@ -3,6 +3,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useExitPresence } from "../fx";
 import { errorMessage, useSession } from "../session";
+import { useSettings } from "../settings-context";
 import { Button } from "./Button";
 import { OtpBoxes } from "./OtpBoxes";
 
@@ -167,6 +168,7 @@ export function UnlockPanel({
             busy={busy}
             disabled={done || (mode === "totp" ? code.length !== 6 : !recoveryCode.trim())}
           >
+            <LockOpen size={16} />
             开锁
           </Button>
         </div>
@@ -183,7 +185,8 @@ export function SensitiveUnlock({
   onToast: (text: string) => void;
   sealedHint?: string;
 }) {
-  const { unlocked, doLock } = useSession();
+  const { unlocked, doLock, idleRemaining } = useSession();
+  const { settings } = useSettings();
   const [open, setOpen] = useState(false);
   const [locking, setLocking] = useState(false);
 
@@ -192,11 +195,13 @@ export function SensitiveUnlock({
   }, [unlocked]);
 
   if (unlocked) {
+    const countingDown = settings.autoLockEnabled && idleRemaining !== null;
+    const urgent = countingDown && idleRemaining < 10;
     return (
       <div key="open" className="fx-unmask mb-5 flex items-center justify-between gap-3 border-b border-line pb-4">
-        <p className="flex items-center gap-2 text-sm text-muted">
-          <LockOpen size={16} className="shrink-0 text-accent" />
-          已开锁，离开本页会自动封存
+        <p className={`flex items-center gap-2 text-sm ${urgent ? "text-peach-ink" : "text-muted"}`}>
+          <LockOpen size={16} className={`shrink-0 ${urgent ? "text-peach-ink" : "text-accent"}`} />
+          {countingDown ? `已开锁 · ${idleRemaining} 秒后封存` : "已开锁，离开本页会自动封存"}
         </p>
         <Button
           type="button"
@@ -225,6 +230,7 @@ export function SensitiveUnlock({
         </span>
         <p className="min-w-0 flex-1 text-sm text-peach-ink">{sealedHint}</p>
         <Button type="button" onClick={() => setOpen(true)}>
+          <LockOpen size={16} />
           开锁
         </Button>
       </div>

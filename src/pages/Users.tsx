@@ -1,3 +1,4 @@
+import { UserAdd } from "reicon-react";
 import { FormEvent, useEffect, useState } from "react";
 import { api, type User } from "../api";
 import { Button } from "../components/Button";
@@ -86,7 +87,7 @@ export function UsersPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={creating}
-                  className="mt-2 w-full rounded-box border border-line-strong bg-canvas px-3 py-2 outline-none focus:border-accent"
+                  className="mt-2 h-10 w-full rounded-box border border-line-strong bg-canvas px-3 text-sm leading-none outline-none focus:border-accent"
                 />
               </div>
               <div>
@@ -95,10 +96,11 @@ export function UsersPage() {
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   disabled={creating}
-                  className="mt-2 w-full rounded-box border border-line-strong bg-canvas px-3 py-2 outline-none focus:border-accent"
+                  className="mt-2 h-10 w-full rounded-box border border-line-strong bg-canvas px-3 text-sm leading-none outline-none focus:border-accent"
                 />
               </div>
-              <Button type="submit" busy={creating}>
+              <Button type="submit" busy={creating} className="h-10">
+                <UserAdd size={16} />
                 添加成员
               </Button>
             </form>
@@ -173,7 +175,7 @@ function UsersSkeleton() {
           <p className="text-xs text-muted">显示名</p>
           <Skeleton className="mt-2 block h-10 w-full rounded-box" />
         </div>
-        <Skeleton className="block h-10 w-24 rounded-box" />
+        <Skeleton className="block h-10 w-32 rounded-box" />
       </div>
       <ul className="mt-8">
         {Array.from({ length: 4 }, (_, index) => (

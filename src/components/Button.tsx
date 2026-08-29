@@ -16,7 +16,7 @@ const TONE: Record<Tone, string> = {
 };
 
 function btnClass(tone: Tone, className: string) {
-  return `fx-hover fx-press inline-flex items-center justify-center gap-1.5 rounded-box px-4 py-2 font-sans text-sm font-normal disabled:opacity-40 ${TONE[tone]} ${className}`;
+  return `fx-hover fx-press inline-flex items-center justify-center gap-1.5 rounded-box px-4 py-2 font-sans text-sm font-normal leading-none disabled:opacity-40 ${TONE[tone]} ${className}`;
 }
 
 export function Button({

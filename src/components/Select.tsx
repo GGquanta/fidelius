@@ -142,7 +142,7 @@ export function Select({
           setOpen((v) => !v);
         }}
         onKeyDown={onTriggerKey}
-        className={`fx-hover flex w-full items-center gap-2 rounded-box border bg-canvas px-3 py-2 text-left text-sm outline-none ${
+        className={`fx-hover flex h-full w-full items-center gap-2 rounded-box border bg-canvas px-3 py-2 text-left text-sm leading-none outline-none ${
           open ? "border-accent" : "border-line-strong"
         }`}
       >

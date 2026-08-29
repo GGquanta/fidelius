@@ -1,4 +1,4 @@
-import { Edit, Trash } from "reicon-react";
+import { Edit, Share3, Trash } from "reicon-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api, type RecordMeta, type RevealedRecord } from "../api";
@@ -165,22 +165,24 @@ export function RecordDetailPage() {
             {owner ? (
               <section>
                 <h2 className="text-[12px] tracking-[0.08em] text-tertiary">分享</h2>
-                <div className="mt-3 space-y-2">
-                  <Select
-                    value={shareId}
-                    onChange={setShareId}
-                    placeholder={shareable.length === 0 ? "没有可分享的成员" : "选择成员"}
-                    showInitial
-                    options={shareable.map((person) => ({
-                      id: person.id,
-                      label: person.displayName,
-                      hint: person.email,
-                    }))}
-                  />
+                <div className="mt-3 flex items-stretch gap-2">
+                  <div className="min-w-0 flex-1">
+                    <Select
+                      value={shareId}
+                      onChange={setShareId}
+                      placeholder={shareable.length === 0 ? "没有可分享的成员" : "选择成员"}
+                      showInitial
+                      options={shareable.map((person) => ({
+                        id: person.id,
+                        label: person.displayName,
+                        hint: person.email,
+                      }))}
+                    />
+                  </div>
                   <Button
                     type="button"
-                    tone="secondary"
-                    className="w-full"
+                    tone="accent"
+                    className="shrink-0"
                     busy={acting === "share"}
                     disabled={!shareId || acting !== null}
                     onClick={() => {
@@ -198,6 +200,7 @@ export function RecordDetailPage() {
                         .finally(() => setActing(null));
                     }}
                   >
+                    <Share3 size={16} />
                     分享
                   </Button>
                 </div>

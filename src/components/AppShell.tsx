@@ -4,6 +4,7 @@ import {
   ChevronLeft,
   Magnifier,
   Moon,
+  Setting,
   Sun,
   Users,
   Vault,
@@ -19,6 +20,7 @@ import { useTheme } from "../ui";
 import { CategoryIcon, type CategoryId } from "./CategoryIcon";
 import { ProfilePanel } from "./ProfilePanel";
 import { SealMark } from "./SealMark";
+import { SettingsPanel } from "./SettingsPanel";
 import { Skeleton } from "./Skeleton";
 import { Wordmark } from "./Wordmark";
 
@@ -42,11 +44,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [counts, setCounts] = useState<Record<string, number> | null>(null);
   const [vaultOpen, setVaultOpen] = useState(true);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const closeProfile = useCallback(() => setProfileOpen(false), []);
+  const closeSettings = useCallback(() => setSettingsOpen(false), []);
   const category = (params.get("category") as CategoryId | null) ?? "all";
   const onVault = location.pathname === "/vault";
-  const inVaultSection =
-    onVault || location.pathname === "/new" || location.pathname.startsWith("/records/");
 
   useEffect(() => {
     if (!isSensitivePath(location.pathname) && unlocked) {
@@ -120,20 +122,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </NavLink>
 
           <div className="mt-6">
+            <p className="px-3 pb-2 text-[12px] tracking-[0.08em] text-tertiary">保险库</p>
             <div className="flex items-center gap-1">
               <button
                 type="button"
                 className={`fx-hover flex h-9 min-w-0 flex-1 items-center gap-2 rounded-box px-3 text-sm ${
-                  inVaultSection && !onVault
-                    ? "bg-accent-soft text-accent-ink"
-                    : inVaultSection
-                      ? "text-ink"
-                      : "side-hit text-muted"
+                  onVault && category === "all" ? "bg-accent-soft text-accent-ink" : "side-hit text-muted"
                 }`}
                 onClick={() => selectCategory("all")}
               >
                 <Vault size={16} className="text-tertiary" />
-                <span className="min-w-0 flex-1 text-left">保险库</span>
+                <span className="min-w-0 flex-1 text-left">全部</span>
                 {counts ? (
                   <span className="font-metric text-[12px] text-tertiary">{counts.all ?? 0}</span>
                 ) : (
@@ -152,7 +151,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
             <div className={`side-tree-clip ${vaultOpen ? "is-open" : ""}`} inert={!vaultOpen || undefined}>
               <ul className="side-tree">
-                {CATEGORIES.map((item) => {
+                {CATEGORIES.filter((item) => item.id !== "all").map((item) => {
                   const active = onVault && category === item.id;
                   return (
                     <li key={item.id}>
@@ -207,21 +206,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </span>
               <CaretRight size={12} className="shrink-0 text-tertiary" />
             </button>
-            <button
-              type="button"
-              onClick={toggle}
-              className="fx-hover shrink-0 rounded-box p-2 text-muted hover:bg-hover hover:text-ink"
-              aria-label="切换主题"
-            >
-              {dark ? <Sun size={16} /> : <Moon size={16} />}
-            </button>
           </div>
         </div>
         <ProfilePanel open={profileOpen} onClose={closeProfile} />
       </aside>
       <div className="flex min-h-0 min-w-0 flex-col">
-        <header className="flex h-16 shrink-0 items-center border-b border-line bg-surface px-6">
-          <form onSubmit={search} className="relative w-full max-w-xl">
+        <header className="flex h-16 shrink-0 items-center gap-4 border-b border-line bg-surface px-6">
+          <form onSubmit={search} className="relative min-w-0 w-full max-w-xl">
             <Magnifier size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-tertiary" />
             <input
               value={query}
@@ -230,7 +221,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               className="w-full rounded-box border border-line-strong bg-canvas py-2 pl-9 pr-3 text-sm outline-none focus:border-accent"
             />
           </form>
+          <div className="ml-auto flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              onClick={toggle}
+              className="fx-hover fx-press rounded-box p-2 text-muted hover:bg-hover hover:text-ink"
+              aria-label="切换主题"
+            >
+              {dark ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
+            <button
+              type="button"
+              onClick={() => setSettingsOpen(true)}
+              className={`fx-hover fx-press rounded-box p-2 ${
+                settingsOpen ? "bg-accent-soft text-accent-ink" : "text-muted hover:bg-hover hover:text-ink"
+              }`}
+              aria-label="设置"
+              aria-haspopup="dialog"
+              aria-expanded={settingsOpen}
+            >
+              <Setting size={16} />
+            </button>
+          </div>
         </header>
+        <SettingsPanel open={settingsOpen} onClose={closeSettings} />
         <main className="vt-paper mesh-glow flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">{children}</main>
       </div>
     </div>

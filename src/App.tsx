@@ -7,6 +7,7 @@ import { RecordFormPage } from "./pages/RecordForm";
 import { UsersPage } from "./pages/Users";
 import { VaultPage } from "./pages/Vault";
 import { SessionProvider, useSession } from "./session";
+import { SettingsProvider } from "./settings-context";
 import { ToastHost } from "./ui";
 
 function UsersGate() {
@@ -42,11 +43,13 @@ function Shell() {
 
 function Root() {
   return (
-    <SessionProvider>
+    <SettingsProvider>
       <ToastHost>
-        <Shell />
+        <SessionProvider>
+          <Shell />
+        </SessionProvider>
       </ToastHost>
-    </SessionProvider>
+    </SettingsProvider>
   );
 }
 

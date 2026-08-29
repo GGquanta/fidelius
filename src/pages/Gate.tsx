@@ -55,7 +55,7 @@ export function EnrollPage() {
 
   return (
     <main className="mesh-glow relative min-h-[100dvh] overflow-hidden">
-      <div className="mx-auto grid min-h-[100dvh] max-w-4xl items-center gap-10 px-6 py-16 md:grid-cols-2">
+      <div className="mx-auto grid min-h-[100dvh] max-w-4xl items-center gap-10 px-6 py-8 md:grid-cols-2 md:py-16">
         <div>
           <SealMark size={40} />
           <h1 className="font-display mt-6 text-4xl tracking-tight">{saved ? "保存恢复码" : "绑定验证器"}</h1>

@@ -198,7 +198,7 @@ export function SensitiveUnlock({
     const countingDown = settings.autoLockEnabled && idleRemaining !== null;
     const urgent = countingDown && idleRemaining < 10;
     return (
-      <div key="open" className="fx-unmask mb-5 flex items-center justify-between gap-3 border-b border-line pb-4">
+      <div key="open" className="fx-unmask mb-5 flex flex-col items-stretch gap-3 border-b border-line pb-4 sm:flex-row sm:items-center sm:justify-between">
         <p className={`flex items-center gap-2 text-sm ${urgent ? "text-peach-ink" : "text-muted"}`}>
           <LockOpen size={16} className={`shrink-0 ${urgent ? "text-peach-ink" : "text-accent"}`} />
           {countingDown ? `已开锁 · ${idleRemaining} 秒后封存` : "已开锁，离开本页会自动封存"}
@@ -206,6 +206,7 @@ export function SensitiveUnlock({
         <Button
           type="button"
           tone="peach"
+          className="w-full sm:w-auto"
           busy={locking}
           onClick={() => {
             if (locking) return;
@@ -224,12 +225,14 @@ export function SensitiveUnlock({
 
   return (
     <>
-      <div key="sealed" className="mb-5 flex items-center gap-3 rounded-box bg-peach-soft px-4 py-3">
-        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-tile bg-surface text-peach-ink">
-          <Lock size={16} />
-        </span>
-        <p className="min-w-0 flex-1 text-sm text-peach-ink">{sealedHint}</p>
-        <Button type="button" onClick={() => setOpen(true)}>
+      <div key="sealed" className="mb-5 flex flex-col items-stretch gap-3 rounded-box bg-peach-soft px-4 py-3 sm:flex-row sm:items-center">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-tile bg-surface text-peach-ink">
+            <Lock size={16} />
+          </span>
+          <p className="min-w-0 flex-1 text-sm text-peach-ink">{sealedHint}</p>
+        </div>
+        <Button type="button" className="w-full sm:w-auto" onClick={() => setOpen(true)}>
           <LockOpen size={16} />
           开锁
         </Button>

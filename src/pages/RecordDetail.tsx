@@ -87,7 +87,7 @@ export function RecordDetailPage() {
 
   if (!record) {
     return (
-      <article className="mx-auto w-full max-w-[1200px] px-6 py-6">
+      <article className="mx-auto w-full max-w-[1200px] px-4 py-5 md:px-6 md:py-6">
         <BackLink to="/vault" label="返回保险库" />
         {err ? <p className="mt-6 text-danger">{err}</p> : <RecordDetailSkeleton />}
       </article>
@@ -104,7 +104,7 @@ export function RecordDetailPage() {
   );
 
   return (
-    <article className="mx-auto w-full max-w-[1200px] px-6 py-6">
+    <article className="mx-auto w-full max-w-[1200px] px-4 py-5 md:px-6 md:py-6">
       <BackLink to="/vault" label="返回保险库" />
 
       <div className="mt-4 overflow-hidden rounded-xl border border-line bg-surface shadow-elev-2">

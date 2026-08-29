@@ -115,7 +115,7 @@ export function DashboardPage() {
   const hello = hour < 12 ? "早上好" : hour < 18 ? "下午好" : "晚上好";
 
   return (
-    <section className="px-6 py-6">
+    <section className="px-4 py-5 md:px-6 md:py-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-sm text-muted">
@@ -137,7 +137,7 @@ export function DashboardPage() {
         </LoadingRegion>
       ) : records ? (
         <>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-6 grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
             <StatCard label="全部" value={stats.total} hint="可见记录" />
             <StatCard label="我的" value={stats.mine} hint="我创建的" />
             <StatCard label="他人分享" value={stats.received} hint="只读" />
@@ -246,7 +246,7 @@ function DashboardSkeleton({
 }) {
   return (
     <>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
         <StatCard label="全部" value={0} hint="可见记录" loading />
         <StatCard label="我的" value={0} hint="我创建的" loading />
         <StatCard label="他人分享" value={0} hint="只读" loading />

@@ -51,7 +51,7 @@ export function UsersPage() {
   const loading = users === null && !err;
 
   return (
-    <section className="mx-auto w-full max-w-[1200px] px-6 py-6">
+    <section className="mx-auto w-full max-w-[1200px] px-4 py-5 md:px-6 md:py-6">
       <div className="rounded-xl border border-line bg-surface px-6 py-6">
         {loading ? (
           <UsersSkeleton />

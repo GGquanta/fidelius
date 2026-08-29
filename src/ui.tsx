@@ -49,7 +49,7 @@ function Toast({ text, onDone }: { text: string; onDone: () => void }) {
 
   return (
     <div
-      className={`fx-toast fixed bottom-6 left-1/2 z-40 flex items-center gap-2 rounded-lg bg-ink px-4 py-2 text-sm text-canvas shadow-elev-3 ${
+      className={`fx-toast fixed bottom-[max(24px,env(safe-area-inset-bottom))] left-1/2 z-40 flex items-center gap-2 rounded-lg bg-ink px-4 py-2 text-sm text-canvas shadow-elev-3 ${
         exiting ? "is-exit" : ""
       }`}
     >

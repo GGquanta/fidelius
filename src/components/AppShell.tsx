@@ -3,6 +3,7 @@ import {
   ChevronDown,
   ChevronLeft,
   Magnifier,
+  Menu,
   Moon,
   Setting,
   Sun,
@@ -10,10 +11,10 @@ import {
   Vault,
   Widget,
 } from "reicon-react";
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api";
-import { VT } from "../fx";
+import { useExitPresence, VT } from "../fx";
 import { useSession } from "../session";
 import { CATEGORIES } from "../templates";
 import { useTheme } from "../ui";
@@ -23,6 +24,8 @@ import { SealMark } from "./SealMark";
 import { SettingsPanel } from "./SettingsPanel";
 import { Skeleton } from "./Skeleton";
 import { Wordmark } from "./Wordmark";
+
+const DESKTOP_QUERY = "(min-width: 768px)";
 
 function isSensitivePath(pathname: string) {
   return pathname.startsWith("/records/");
@@ -34,21 +37,51 @@ function itemClass(active: boolean) {
   }`;
 }
 
+function useDesktop() {
+  const [desktop, setDesktop] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia(DESKTOP_QUERY).matches : true,
+  );
+
+  useEffect(() => {
+    const media = window.matchMedia(DESKTOP_QUERY);
+    function sync() {
+      setDesktop(media.matches);
+    }
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
+
+  return desktop;
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, unlocked, doLock } = useSession();
   const { dark, toggle } = useTheme();
   const [params, setParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const desktop = useDesktop();
+  const menuRef = useRef<HTMLButtonElement>(null);
+  const asideRef = useRef<HTMLElement>(null);
+  const wasNavOpen = useRef(false);
+  const searchRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState(params.get("q") ?? "");
+  const [searchOpen, setSearchOpen] = useState(false);
   const [counts, setCounts] = useState<Record<string, number> | null>(null);
   const [vaultOpen, setVaultOpen] = useState(true);
+  const [navOpen, setNavOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const { shown: navShown, exiting: navExiting } = useExitPresence(navOpen, 280);
   const closeProfile = useCallback(() => setProfileOpen(false), []);
   const closeSettings = useCallback(() => setSettingsOpen(false), []);
+  const closeNav = useCallback(() => setNavOpen(false), []);
   const category = (params.get("category") as CategoryId | null) ?? "all";
   const onVault = location.pathname === "/vault";
+  const drawerActive = navOpen && !desktop;
+  const searchExpanded = searchOpen && !desktop;
+  const searchArmed = searchExpanded || Boolean(query.trim());
 
   useEffect(() => {
     if (!isSensitivePath(location.pathname) && unlocked) {
@@ -69,6 +102,46 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setQuery(params.get("q") ?? "");
   }, [params]);
+
+  useEffect(() => {
+    setNavOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (desktop) {
+      setNavOpen(false);
+      setSearchOpen(false);
+    }
+  }, [desktop]);
+
+  useEffect(() => {
+    if (!drawerActive && !searchExpanded) return;
+    const previous = document.body.style.overflow;
+    if (drawerActive) document.body.style.overflow = "hidden";
+    function onKey(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      if (drawerActive) closeNav();
+      else if (searchExpanded) setSearchOpen(false);
+    }
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [drawerActive, searchExpanded, closeNav]);
+
+  useEffect(() => {
+    if (searchExpanded) searchRef.current?.focus();
+  }, [searchExpanded]);
+
+  useEffect(() => {
+    if (drawerActive) {
+      asideRef.current?.focus();
+    } else if (wasNavOpen.current && !desktop) {
+      menuRef.current?.focus();
+    }
+    wasNavOpen.current = drawerActive;
+  }, [drawerActive]);
 
   function applySearch(value: string, replace = true) {
     const next = new URLSearchParams(params);
@@ -99,6 +172,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   function selectCategory(id: CategoryId) {
     setVaultOpen(true);
+    closeNav();
     const next = new URLSearchParams();
     const q = params.get("q");
     if (q) next.set("q", q);
@@ -107,16 +181,41 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="h-[100dvh] md:grid md:grid-cols-[272px_1fr]">
-      <aside className="vt-sidebar sidebar-frost flex h-auto flex-col border-b border-line md:h-[100dvh] md:border-b-0 md:border-r">
-        <div className="brand-lockup mx-3 mt-4 mb-3 flex items-center gap-5 px-2">
+    <div className="flex h-[100dvh] flex-col md:grid md:grid-cols-[272px_1fr]">
+      {navShown && !desktop ? (
+        <div
+          className={`fx-overlay fixed inset-x-0 bottom-0 top-[calc(4rem+env(safe-area-inset-top))] z-40 bg-ink/40 md:hidden ${navExiting ? "is-exit" : ""}`}
+          onClick={closeNav}
+          role="presentation"
+        />
+      ) : null}
+      <aside
+        ref={asideRef}
+        id="app-sidebar"
+        tabIndex={-1}
+        aria-label="导航"
+        role={drawerActive ? "dialog" : undefined}
+        aria-modal={drawerActive || undefined}
+        aria-hidden={!desktop && !navOpen ? true : undefined}
+        inert={!desktop && !navOpen ? true : undefined}
+        className={`vt-sidebar sidebar-frost fx-drawer flex h-[100dvh] flex-col outline-none max-md:fixed max-md:top-[calc(4rem+env(safe-area-inset-top))] max-md:bottom-0 max-md:left-0 max-md:z-40 max-md:h-auto max-md:w-[min(272px,calc(100vw-48px))] max-md:border-r max-md:border-line max-md:shadow-elev-4 md:relative md:border-r md:border-line md:shadow-none ${
+          navOpen ? "is-open" : ""
+        } ${!desktop && !navOpen ? "pointer-events-none" : ""}`}
+      >
+        <div className="brand-lockup mx-3 mt-4 mb-3 hidden items-center gap-5 px-2 md:flex">
           <SealMark size={30} />
           <Wordmark />
         </div>
 
         <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
           <p className="px-3 pb-2 text-[12px] tracking-[0.08em] text-tertiary">工作台</p>
-          <NavLink to="/" end viewTransition className={({ isActive }) => itemClass(isActive)}>
+          <NavLink
+            to="/"
+            end
+            viewTransition
+            onClick={closeNav}
+            className={({ isActive }) => itemClass(isActive)}
+          >
             <Widget size={16} className="text-tertiary" />
             概览
           </NavLink>
@@ -180,7 +279,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {user?.role === "admin" ? (
             <>
               <p className="mt-6 px-3 pb-2 text-[12px] tracking-[0.08em] text-tertiary">管理</p>
-              <NavLink to="/users" viewTransition className={({ isActive }) => itemClass(isActive)}>
+              <NavLink to="/users" viewTransition onClick={closeNav} className={({ isActive }) => itemClass(isActive)}>
                 <Users size={16} className="text-tertiary" />
                 团队
               </NavLink>
@@ -188,7 +287,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           ) : null}
         </nav>
 
-        <div className="p-3">
+        <div className="p-3 pb-[max(12px,env(safe-area-inset-bottom))]">
           <div className="flex items-center gap-1 rounded-lg border border-line bg-surface p-1">
             <button
               type="button"
@@ -210,38 +309,80 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
         <ProfilePanel open={profileOpen} onClose={closeProfile} />
       </aside>
-      <div className="flex min-h-0 min-w-0 flex-col">
-        <header className="flex h-16 shrink-0 items-center gap-4 border-b border-line bg-surface px-6">
-          <form onSubmit={search} className="relative min-w-0 w-full max-w-xl">
-            <Magnifier size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-tertiary" />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="搜索标题或描述"
-              className="w-full rounded-box border border-line-strong bg-canvas py-2 pl-9 pr-3 text-sm outline-none focus:border-accent"
-            />
-          </form>
-          <div className="ml-auto flex shrink-0 items-center gap-1">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <header className="relative z-50 shrink-0 border-b border-line bg-surface pt-[env(safe-area-inset-top)]">
+          <div className="flex h-16 items-center gap-3 px-4 md:gap-4 md:px-6">
             <button
+              ref={menuRef}
               type="button"
-              onClick={toggle}
-              className="fx-hover fx-press rounded-box p-2 text-muted hover:bg-hover hover:text-ink"
-              aria-label="切换主题"
-            >
-              {dark ? <Sun size={16} /> : <Moon size={16} />}
-            </button>
-            <button
-              type="button"
-              onClick={() => setSettingsOpen(true)}
-              className={`fx-hover fx-press rounded-box p-2 ${
-                settingsOpen ? "bg-accent-soft text-accent-ink" : "text-muted hover:bg-hover hover:text-ink"
+              className={`fx-hover fx-press inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-box md:hidden ${
+                navOpen ? "bg-accent-soft text-accent-ink" : "text-muted hover:bg-hover hover:text-ink"
               }`}
-              aria-label="设置"
-              aria-haspopup="dialog"
-              aria-expanded={settingsOpen}
+              aria-expanded={navOpen}
+              aria-controls="app-sidebar"
+              aria-label={navOpen ? "关闭导航" : "打开导航"}
+              onClick={() => {
+                setSearchOpen(false);
+                setNavOpen((open) => !open);
+              }}
             >
-              <Setting size={16} />
+              <Menu size={16} />
             </button>
+            {searchExpanded ? null : (
+              <div className="brand-lockup flex min-w-0 flex-1 items-center gap-3 md:hidden">
+                <SealMark size={30} />
+                <Wordmark />
+              </div>
+            )}
+            <form
+              onSubmit={search}
+              className={`relative min-w-0 ${searchExpanded ? "flex-1" : "hidden"} md:block md:w-full md:max-w-xl`}
+            >
+              <Magnifier size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-tertiary" />
+              <input
+                ref={searchRef}
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder={desktop ? "搜索标题或描述" : "搜索"}
+                className="w-full rounded-box border border-line-strong bg-canvas py-2 pl-9 pr-3 text-base outline-none focus:border-accent md:text-sm"
+              />
+            </form>
+            <div className="ml-auto flex shrink-0 items-center gap-1">
+              <button
+                type="button"
+                className={`fx-hover fx-press inline-flex h-10 w-10 items-center justify-center rounded-box md:hidden ${
+                  searchArmed ? "bg-accent-soft text-accent-ink" : "text-muted hover:bg-hover hover:text-ink"
+                }`}
+                aria-expanded={searchExpanded}
+                aria-label={searchExpanded ? "收起搜索" : "搜索"}
+                onClick={() => {
+                  closeNav();
+                  setSearchOpen((open) => !open);
+                }}
+              >
+                <Magnifier size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={toggle}
+                className="fx-hover fx-press inline-flex h-10 w-10 items-center justify-center rounded-box text-muted hover:bg-hover hover:text-ink"
+                aria-label="切换主题"
+              >
+                {dark ? <Sun size={16} /> : <Moon size={16} />}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSettingsOpen(true)}
+                className={`fx-hover fx-press inline-flex h-10 w-10 items-center justify-center rounded-box ${
+                  settingsOpen ? "bg-accent-soft text-accent-ink" : "text-muted hover:bg-hover hover:text-ink"
+                }`}
+                aria-label="设置"
+                aria-haspopup="dialog"
+                aria-expanded={settingsOpen}
+              >
+                <Setting size={16} />
+              </button>
+            </div>
           </div>
         </header>
         <SettingsPanel open={settingsOpen} onClose={closeSettings} />

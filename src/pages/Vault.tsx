@@ -60,7 +60,7 @@ export function VaultPage() {
   }
 
   return (
-    <section className="flex min-h-full flex-1 flex-col px-6 py-6">
+    <section className="flex min-h-full flex-1 flex-col px-4 py-5 md:px-6 md:py-6">
       <div className="flex items-end justify-between gap-4">
         <div>
           <p className="text-[12px] tracking-[0.08em] text-tertiary">记录</p>

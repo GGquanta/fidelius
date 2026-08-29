@@ -160,7 +160,7 @@ export function RecordFormPage() {
   }
 
   return (
-    <form onSubmit={(event) => void submit(event)} className="mx-auto w-full max-w-[1200px] px-6 py-6">
+    <form onSubmit={(event) => void submit(event)} className="mx-auto w-full max-w-[1200px] px-4 py-5 md:px-6 md:py-6">
       <BackLink to={editing && id ? `/records/${id}` : "/vault"} label={editing ? "返回记录" : "返回保险库"} />
       <div className="mt-4 rounded-xl border border-line bg-surface px-6 py-6">
         <h1 className="font-display text-3xl tracking-tight">{editing ? "编辑记录" : "新建记录"}</h1>

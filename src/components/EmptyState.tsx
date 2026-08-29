@@ -8,7 +8,7 @@ export function EmptyState({ category, query }: { category: CategoryId; query?: 
     ? `没有与「${query.trim()}」匹配的记录。`
     : (EMPTY_COPY[category] ?? EMPTY_COPY.all);
   return (
-    <div className="rise flex min-h-[320px] flex-1 flex-col items-center justify-center px-6 py-16 text-center">
+    <div className="rise flex min-h-0 flex-1 flex-col items-center justify-center px-6 py-10 text-center md:py-16">
       <CategoryIcon category={category} size={64} />
       <p className="mt-6 max-w-[36ch] text-muted">{copy}</p>
       <Link

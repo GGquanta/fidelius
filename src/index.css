@@ -480,7 +480,6 @@ button {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  min-height: 0;
   --folder-stroke: color-mix(in srgb, var(--ink) 24%, var(--surface));
 }
 
@@ -490,9 +489,11 @@ button {
 
 .folder-tabs {
   display: flex;
+  flex: 0 0 36px;
   align-items: stretch;
   gap: 4px;
   height: 36px;
+  min-height: 36px;
   overflow-x: auto;
   overflow-y: hidden;
   position: relative;
@@ -598,7 +599,7 @@ html.dark .folder-tab.is-active:hover {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  min-height: 480px;
+  min-height: 0;
   border: 1px solid var(--folder-stroke);
   border-top: none;
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);

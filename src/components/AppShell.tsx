@@ -198,9 +198,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         aria-modal={drawerActive || undefined}
         aria-hidden={!desktop && !navOpen ? true : undefined}
         inert={!desktop && !navOpen ? true : undefined}
-        className={`vt-sidebar sidebar-frost fx-drawer flex h-[100dvh] flex-col outline-none max-md:fixed max-md:top-[calc(4rem+env(safe-area-inset-top))] max-md:bottom-0 max-md:left-0 max-md:z-40 max-md:h-auto max-md:w-[min(272px,calc(100vw-48px))] max-md:border-r max-md:border-line max-md:shadow-elev-4 md:relative md:border-r md:border-line md:shadow-none ${
+        className={`vt-sidebar sidebar-frost fx-drawer flex h-[100dvh] flex-col outline-none max-md:fixed max-md:top-[calc(4rem+env(safe-area-inset-top))] max-md:bottom-0 max-md:left-0 max-md:z-40 max-md:h-auto max-md:w-[min(272px,calc(100vw-48px))] md:relative md:border-r md:border-line ${
           navOpen ? "is-open" : ""
-        } ${!desktop && !navOpen ? "pointer-events-none" : ""}`}
+        } ${navShown && !desktop ? "border-r border-line shadow-elev-4" : ""} ${
+          !desktop && !navOpen ? "pointer-events-none" : ""
+        }`}
       >
         <div className="brand-lockup mx-3 mt-4 mb-3 hidden items-center gap-5 px-2 md:flex">
           <SealMark size={30} />

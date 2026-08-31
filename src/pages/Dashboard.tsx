@@ -21,7 +21,7 @@ function weekBuckets(records: RecordMeta[]): number[] {
   return buckets;
 }
 
-function QuotaCard({ occupied, limit }: { occupied: number; limit: number }) {
+function QuotaCard({ occupied, limit, pending }: { occupied: number; limit: number; pending: number }) {
   return (
     <article className="rounded-xl border border-line bg-surface p-5 shadow-elev-1">
       <h2 className="text-sm text-muted">成员名额</h2>
@@ -37,6 +37,7 @@ function QuotaCard({ occupied, limit }: { occupied: number; limit: number }) {
           />
         ))}
       </div>
+      {pending > 0 ? <p className="mt-3 text-sm text-muted">有 {pending} 人待开通</p> : null}
       <Link to="/users" viewTransition className="fx-hover mt-4 inline-block text-sm text-accent-ink">
         管理成员
       </Link>
@@ -63,6 +64,7 @@ export function DashboardPage() {
   const { user } = useSession();
   const [records, setRecords] = useState<RecordMeta[] | null>(null);
   const [occupied, setOccupied] = useState<number | null>(null);
+  const [pending, setPending] = useState(0);
   const [limit, setLimit] = useState(20);
   const [err, setErr] = useState("");
   const admin = user?.role === "admin";
@@ -77,6 +79,7 @@ export function DashboardPage() {
       void api.users().then((result) => {
         setLimit(result.limit ?? 20);
         setOccupied(result.occupied ?? result.users.length);
+        setPending(result.visitors?.length ?? 0);
       });
     }
   }, [user?.role]);
@@ -224,7 +227,7 @@ export function DashboardPage() {
                 occupied === null ? (
                   <QuotaSkeleton />
                 ) : (
-                  <QuotaCard occupied={occupied} limit={limit} />
+                  <QuotaCard occupied={occupied} limit={limit} pending={pending} />
                 )
               ) : null}
             </div>
@@ -324,7 +327,7 @@ function DashboardSkeleton({
             occupied === null ? (
               <QuotaSkeleton />
             ) : (
-              <QuotaCard occupied={occupied} limit={limit} />
+              <QuotaCard occupied={occupied} limit={limit} pending={pending} />
             )
           ) : null}
         </div>

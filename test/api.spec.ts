@@ -62,6 +62,62 @@ describe("fidelius api", () => {
     expect(body.code).toBe("not_provisioned");
   });
 
+  it("notes unprovisioned visits so admin can provision them", async () => {
+    await enroll(ADMIN);
+    const knock = await json("/api/me", { headers: headers(STRANGER) });
+    expect(knock.res.status).toBe(403);
+    expect(knock.body.code).toBe("not_provisioned");
+
+    const listed = await json("/api/users", { headers: headers(ADMIN) });
+    const visitors = listed.body.visitors as { email: string }[];
+    expect(visitors.map((item) => item.email)).toContain(STRANGER);
+    expect(visitors.map((item) => item.email)).not.toContain(ADMIN);
+    expect(listed.body.occupied).toBe(1);
+
+    const provisioned = await json("/api/users/provision", {
+      method: "POST",
+      headers: headers(ADMIN),
+      body: JSON.stringify({ email: STRANGER }),
+    });
+    expect(provisioned.res.status).toBe(201);
+    expect(provisioned.body.user).toMatchObject({
+      email: STRANGER,
+      status: "pending_enroll",
+      role: "member",
+    });
+
+    const after = await json("/api/users", { headers: headers(ADMIN) });
+    expect((after.body.visitors as { email: string }[]).map((item) => item.email)).not.toContain(STRANGER);
+    expect((after.body.users as { email: string }[]).some((item) => item.email === STRANGER)).toBe(true);
+    expect(after.body.occupied).toBe(2);
+
+    await enroll(STRANGER);
+    const memberView = await json("/api/users", { headers: headers(STRANGER) });
+    expect(memberView.body.visitors).toBeUndefined();
+
+    const missing = await json("/api/users/provision", {
+      method: "POST",
+      headers: headers(ADMIN),
+      body: JSON.stringify({ email: "ghost@example.com" }),
+    });
+    expect(missing.res.status).toBe(404);
+    expect(missing.body.code).toBe("not_found");
+  });
+
+  it("removes a visitor when the admin adds that email", async () => {
+    await enroll(ADMIN);
+    await json("/api/me", { headers: headers(STRANGER) });
+    const added = await json("/api/users", {
+      method: "POST",
+      headers: headers(ADMIN),
+      body: JSON.stringify({ email: STRANGER, displayName: "访客转成员" }),
+    });
+    expect(added.res.status).toBe(201);
+    const listed = await json("/api/users", { headers: headers(ADMIN) });
+    expect((listed.body.visitors as { email: string }[]).map((item) => item.email)).not.toContain(STRANGER);
+    expect((listed.body.users as { email: string; displayName: string }[]).some((item) => item.displayName === "访客转成员")).toBe(true);
+  });
+
   it("bootstraps admin, enrolls, and unlocks", async () => {
     const { secret } = await enroll(ADMIN);
     const me = await json("/api/me", { headers: headers(ADMIN) });

@@ -30,8 +30,11 @@ import {
   disableUser,
   getUnlockExpiresAt,
   listUsers,
+  listVisitors,
   lock,
+  noteVisitor,
   parseUnlockCookie,
+  provisionVisitor,
   publicUser,
   regenerateRecoveryCodes,
   remainingRecoveryCodes,
@@ -113,6 +116,7 @@ function setUnlockCookie(
 app.get("/api/me", async (c) => {
   const user = c.get("user");
   if (!user) {
+    await noteVisitor(c.env, c.get("email"));
     return c.json(
       { user: null, email: c.get("email"), unlocked: false, unlockExpiresAt: null, code: "not_provisioned" },
       403,
@@ -297,6 +301,7 @@ app.get("/api/users", async (c) => {
   if (user.role === "admin") {
     return c.json({
       users: users.map(publicUser),
+      visitors: await listVisitors(c.env),
       limit: USER_LIMIT,
       occupied: users.filter((u) => u.status !== "disabled").length,
     });
@@ -316,6 +321,13 @@ app.post("/api/users", async (c) => {
     displayName: body.displayName ?? "",
     role: "member",
   });
+  return c.json({ user: publicUser(created) }, 201);
+});
+
+app.post("/api/users/provision", async (c) => {
+  requireAdmin(c);
+  const body = await c.req.json<{ email?: string }>();
+  const created = await provisionVisitor(c.env, body.email ?? "");
   return c.json({ user: publicUser(created) }, 201);
 });
 

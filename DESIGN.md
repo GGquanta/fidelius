@@ -29,6 +29,7 @@ fidelius/
 | 键 | 内容 |
 | --- | --- |
 | `meta:users` | `{ ids: string[], count: number }` |
+| `meta:visitors` | `{ items: { email, firstSeenAt, lastSeenAt }[] }` 最多 50 |
 | `user:{id}` | 用户元数据 |
 | `user:email:{email}` | `{ userId }` |
 | `totp:{userId}` | 加密 TOTP |
@@ -54,6 +55,12 @@ interface User {
   status: "pending_enroll" | "active" | "disabled";
   createdAt: string;
   updatedAt: string;
+}
+
+interface Visitor {
+  email: string;
+  firstSeenAt: string;
+  lastSeenAt: string;
 }
 ```
 
@@ -109,8 +116,9 @@ interface VaultRecord {
 | POST | `/api/records/:id/share` | `{ userId }` |
 | DELETE | `/api/records/:id/share/:userId` | 收回 |
 | GET | `/api/records/:id/audit` | 审计，`?offset=&limit=`，默认每页 10 条，`limit` 上限 10；返回 `{ entries, total }` |
-| GET | `/api/users` | admin |
+| GET | `/api/users` | admin 含 `users`、`visitors`、`limit`、`occupied`；成员只得可分享的 `active` 摘要，无访客 |
 | POST | `/api/users` | `{ email, displayName }` |
+| POST | `/api/users/provision` | `{ email }`，将访客开通为待绑定成员 |
 | POST | `/api/users/:id/disable` | 停用 |
 
 错误码：`not_provisioned`、`pending_enroll`、`disabled`、`forbidden`、`totp_invalid`、`totp_locked`、`unlock_required`、`user_limit`、`user_has_records`、`not_found`、`validation`。
@@ -227,7 +235,7 @@ interface VaultRecord {
 - 字段类型：text / secret / multiline 环形图（只读 `fieldMeta`）
 - 最近更新：5 张记录卡，嵌在 surface 面板内，只用边框与 canvas 底，不加阴影
 - 更新趋势：近 12 周 `updatedAt` 分桶
-- 成员名额（admin）：20 格
+- 成员名额（admin）：20 格；有待开通访客时写「有 n 人待开通」，链到团队页
 
 图表自绘 SVG，不引图表库。
 
@@ -259,11 +267,11 @@ interface VaultRecord {
 
 表单：与详情同宽的 surface 纸面，返回在纸外。纸内字段区只用边框与 canvas 底，不加阴影。新建用 10 分类选择网格，默认分类为通用；从保险库某分类页签或空状态进入时带 `?category=` 预选该分类。编辑时分类只读（瓷砖 + 名称，不是禁用网格）。未开锁可改并保存标题与描述，不展示字段列表；字段区换成相对 surface 纸面可辨的 `sunken` 大卡（高度约 320px），文案居中「字段已封存。开锁后才能改。」；已开锁才显示字段并可改。保存：未开锁只提交标题和描述；已开锁提交标题、描述和字段，不传分类。提示：未开锁写「分类创建后不能改。未开锁时保存只提交标题和描述；开锁后才能改字段。」；已开锁写「分类创建后不能改。已开锁，保存会写入标题、描述和字段。」编辑页同样有返回。中途开锁只补字段明文，不覆盖已改的标题与描述。
 
-团队：同宽 surface 纸面，无返回。纸内抬头（标题 + 名额计数）+ 20 格进度 + 添加表单 + 成员列表。输入框用 canvas 底，标签在输入框上方。添加表单为邮箱、显示名与添加成员同一行，输入与主按钮同高 40px；「添加成员」左侧加人印。成员行左 36px 正圆首字印 `shrink-0`。身份与操作分区：显示名后紧跟状态标签（已绑定 / 待绑定 / 已停用），标签不是操作、不与「停用」捆在一起；「停用」单独贴在该行内容区右端，与姓名行对齐，`sunken` 浅底 + ink 字（不用删除的 `danger-soft`，也不跟状态标签撞色），左侧减人印，内边距 `px-2 py-1`。邮箱与时间独占条目第二行，从姓名列起铺到行尾（含停用下方）。显示名与邮箱 `min-w-0` 过长截断。状态标签与「停用」`whitespace-nowrap shrink-0`，不拆字、不挤扁圆印。
+团队：同宽 surface 纸面，无返回。纸内抬头（标题 + 名额计数）+ 20 格进度 + 添加表单 + 未开通列表（有访客才出现）+ 成员列表。输入框用 canvas 底，标签在输入框上方。添加表单为邮箱、显示名与添加成员同一行，输入与主按钮同高 40px；「添加成员」左侧加人印。未开通行与成员行同一套网格：左 36px 正圆首字印（取邮箱首字）`shrink-0`。邮箱后紧跟状态标签「未开通」（`sunken` + `text-muted`，不是操作）；「开通」贴在该行右端，与邮箱行对齐，`accent-soft` / `accent-ink`，左侧加人印，内边距 `px-2 py-1`。首次访问时间独占第二行。访客不计入名额。成员行身份与操作分区：显示名后紧跟状态标签（已绑定 / 待绑定 / 已停用），标签不是操作、不与「停用」捆在一起；「停用」单独贴在该行内容区右端，与姓名行对齐，`sunken` 浅底 + ink 字（不用删除的 `danger-soft`，也不跟状态标签撞色），左侧减人印，内边距 `px-2 py-1`。邮箱与时间独占条目第二行，从姓名列起铺到行尾（含停用下方）。显示名与邮箱 `min-w-0` 过长截断。状态标签与「停用」「开通」`whitespace-nowrap shrink-0`，不拆字、不挤扁圆印。
 
 绑定页左说明右 QR 瓷砖，6 格验证码；核对通过后进入第二步展示 10 条恢复码，可下载、复制，点「已保存」进入保险库。竖向内边距窄屏 `py-8`，`md` 起 `py-16`。QR 用当前 accent，须转成 hex 再交给 `qrcode`（该库不接受 `hsl()`）。空状态用大号分类瓷砖 + 当前分类用途说明 + 新建条目。开锁为居中 `--elev-5` 面板，打开即聚焦第一格验证码，支持粘贴整串；「无法使用验证器？」切换为恢复码输入并聚焦该框。提交「开锁」左侧开锁印。个人资料同样是居中 `--elev-5` 面板：显示名可改（1–32 字），邮箱与角色只读，显示恢复码剩余条数，可生成或重新生成恢复码，可更换验证器。设置面板同档居中 `--elev-5`，略宽（约 440px）：抬头设置瓷砖 + 「设置」+ 「只保存在这台浏览器」；分组「安全」下一张描边分组卡，两行开关（定时封存、离开页面时封存；后者默认关），第一行内三档滑块（15 / 30 / 60 秒）：`sunken` 轨道 + accent 圆钮，无抬升阴影；档位名在轨道下方，选中为 ink、其余 tertiary。开关即时写入 `localStorage` 键 `fidelius-settings`，无保存按钮。弹层用 portal 挂到 `document.body`，避开侧栏 `backdrop-filter` 的 stacking context；全屏 `ink/40` 遮罩，面板在视口居中，`z-50`。点遮罩或 Escape 关闭。更换验证器：当前 6 位数字或一条恢复码，再扫新二维码并填写新码，最后保存新恢复码。详情分享名单只列出 `active` 成员。
 
-文案用中文。按钮动词与结果一致：开锁、封存、复制、下载、分享、收回、保存、已保存。禁止营销套话、文言和直译腔。
+文案用中文。按钮动词与结果一致：开锁、封存、复制、下载、分享、收回、保存、已保存、开通。禁止营销套话、文言和直译腔。
 
 固定用语：
 
@@ -316,7 +324,7 @@ interface VaultRecord {
 - 团队：抬头计数、进度条、若干成员行
 - 侧栏：保险库与分类计数
 
-写操作进行中：按钮 `busy`（禁用 + `aria-busy` + 左侧 `.fx-spin`），标签仍是原动词，不改成「保存中」。进行中忽略再次提交。覆盖保存、开锁、封存、分享、收回、删除、添加成员、停用、绑定「继续」、资料保存。
+写操作进行中：按钮 `busy`（禁用 + `aria-busy` + 左侧 `.fx-spin`），标签仍是原动词，不改成「保存中」。进行中忽略再次提交。覆盖保存、开锁、封存、分享、收回、删除、添加成员、开通、停用、绑定「继续」、资料保存。
 
 复制成功用带勾的短提示。删除必须确认。
 

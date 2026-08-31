@@ -1,4 +1,6 @@
 export const USER_LIMIT = 20;
+export const VISITOR_LIMIT = 50;
+export const VISITOR_TOUCH_SECONDS = 60;
 export const UNLOCK_TTL_SECONDS = 600;
 export const ENROLL_TTL_SECONDS = 600;
 export const TOTP_FAIL_LIMIT = 5;
@@ -65,6 +67,16 @@ export interface AuditEntry {
   detail: string;
 }
 
+export interface Visitor {
+  email: string;
+  firstSeenAt: string;
+  lastSeenAt: string;
+}
+
+export interface VisitorsMeta {
+  items: Visitor[];
+}
+
 export interface UsersMeta {
   ids: string[];
   count: number;
@@ -81,6 +93,7 @@ export interface ApiErrorBody {
 
 export const keys = {
   usersMeta: "meta:users",
+  visitorsMeta: "meta:visitors",
   user: (id: string) => `user:${id}`,
   userEmail: (email: string) => `user:email:${email}`,
   totp: (userId: string) => `totp:${userId}`,

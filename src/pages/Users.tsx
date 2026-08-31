@@ -1,6 +1,6 @@
 import { UserAdd, UserMinus } from "reicon-react";
 import { FormEvent, useEffect, useState } from "react";
-import { api, type User } from "../api";
+import { api, type User, type Visitor } from "../api";
 import { Button } from "../components/Button";
 import { LoadingRegion, Skeleton } from "../components/Skeleton";
 import { errorMessage, useSession } from "../session";
@@ -11,17 +11,20 @@ export function UsersPage() {
   const toast = useToast();
   const { user } = useSession();
   const [users, setUsers] = useState<User[] | null>(null);
+  const [visitors, setVisitors] = useState<Visitor[]>([]);
   const [limit, setLimit] = useState(20);
   const [occupied, setOccupied] = useState(0);
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [err, setErr] = useState("");
   const [creating, setCreating] = useState(false);
+  const [provisioningEmail, setProvisioningEmail] = useState<string | null>(null);
   const [disablingId, setDisablingId] = useState<string | null>(null);
 
   async function load() {
     const result = await api.users();
     setUsers(result.users as User[]);
+    setVisitors(result.visitors ?? []);
     setLimit(result.limit ?? 20);
     setOccupied(result.occupied ?? result.users.length);
   }
@@ -105,7 +108,53 @@ export function UsersPage() {
               </Button>
             </form>
             {err ? <p className="mt-4 text-sm text-danger">{err}</p> : null}
-            <ul className="mt-8">
+            {visitors.length > 0 ? (
+              <ul className="mt-8">
+                {visitors.map((item) => (
+                  <li
+                    key={item.email}
+                    className="grid grid-cols-[2.25rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 border-t border-line py-4"
+                  >
+                    <span className="row-start-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sunken text-sm text-muted">
+                      {item.email.slice(0, 1).toUpperCase()}
+                    </span>
+                    <div className="col-start-2 row-start-1 flex min-w-0 items-center gap-2">
+                      <p className="min-w-0 truncate font-mono text-sm">{item.email}</p>
+                      <span className="inline-flex shrink-0 whitespace-nowrap rounded-box bg-sunken px-2 py-0.5 text-xs text-muted">
+                        未开通
+                      </span>
+                    </div>
+                    <Button
+                      type="button"
+                      tone="accent"
+                      className="col-start-3 row-start-1 shrink-0 whitespace-nowrap !px-2 !py-1"
+                      busy={provisioningEmail === item.email}
+                      disabled={provisioningEmail !== null}
+                      onClick={() => {
+                        if (provisioningEmail) return;
+                        setProvisioningEmail(item.email);
+                        setErr("");
+                        void api
+                          .provisionUser(item.email)
+                          .then(() => {
+                            toast("已开通，等待对方绑定验证器");
+                            return load();
+                          })
+                          .catch((error) => setErr(errorMessage(error)))
+                          .finally(() => setProvisioningEmail(null));
+                      }}
+                    >
+                      <UserAdd size={16} />
+                      开通
+                    </Button>
+                    <p className="col-span-2 col-start-2 row-start-2 min-w-0 truncate font-mono text-xs text-tertiary">
+                      首次访问 · {formatTime(item.firstSeenAt)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            <ul className={visitors.length > 0 ? "mt-0" : "mt-8"}>
               {(users ?? []).map((item) => (
                 <li
                   key={item.id}

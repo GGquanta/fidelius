@@ -8,6 +8,8 @@ import {
   TOTP_LOCK_SECONDS,
   UNLOCK_TTL_SECONDS,
   USER_LIMIT,
+  VISITOR_LIMIT,
+  VISITOR_TOUCH_SECONDS,
   getJson,
   keys,
   normalizeEmail,
@@ -15,6 +17,8 @@ import {
   putJson,
   type User,
   type UsersMeta,
+  type Visitor,
+  type VisitorsMeta,
 } from "./types";
 
 interface TotpPayload {
@@ -73,6 +77,51 @@ export async function resolveOrBootstrapUser(env: Env, email: string): Promise<U
   return null;
 }
 
+async function getVisitorsMeta(env: Env): Promise<VisitorsMeta> {
+  return (await getJson<VisitorsMeta>(env.FIDELIUS, keys.visitorsMeta)) ?? { items: [] };
+}
+
+export async function listVisitors(env: Env): Promise<Visitor[]> {
+  const meta = await getVisitorsMeta(env);
+  return [...meta.items].sort((a, b) => b.lastSeenAt.localeCompare(a.lastSeenAt));
+}
+
+export async function noteVisitor(env: Env, email: string): Promise<void> {
+  const normalized = normalizeEmail(email);
+  if (!normalized.includes("@")) return;
+
+  const meta = await getVisitorsMeta(env);
+  const timestamp = nowIso();
+  const existing = meta.items.find((item) => item.email === normalized);
+  if (existing) {
+    const elapsed = Date.now() - Date.parse(existing.lastSeenAt);
+    if (Number.isFinite(elapsed) && elapsed >= 0 && elapsed < VISITOR_TOUCH_SECONDS * 1000) {
+      return;
+    }
+    existing.lastSeenAt = timestamp;
+  } else {
+    while (meta.items.length >= VISITOR_LIMIT) {
+      let oldestIndex = 0;
+      for (let index = 1; index < meta.items.length; index += 1) {
+        if (meta.items[index].lastSeenAt < meta.items[oldestIndex].lastSeenAt) {
+          oldestIndex = index;
+        }
+      }
+      meta.items.splice(oldestIndex, 1);
+    }
+    meta.items.push({ email: normalized, firstSeenAt: timestamp, lastSeenAt: timestamp });
+  }
+  await putJson(env.FIDELIUS, keys.visitorsMeta, meta);
+}
+
+export async function removeVisitor(env: Env, email: string): Promise<void> {
+  const normalized = normalizeEmail(email);
+  const meta = await getVisitorsMeta(env);
+  const next = meta.items.filter((item) => item.email !== normalized);
+  if (next.length === meta.items.length) return;
+  await putJson(env.FIDELIUS, keys.visitorsMeta, { items: next });
+}
+
 export async function listUsers(env: Env): Promise<User[]> {
   const meta = await getUsersMeta(env);
   if (meta.ids.length === 0) return [];
@@ -92,6 +141,7 @@ export async function createUser(
   if (!email.includes("@")) throw new ApiError(400, "validation", "邮箱无效");
   if (!input.displayName.trim()) throw new ApiError(400, "validation", "显示名不能为空");
   if (await getUserByEmail(env, email)) {
+    await removeVisitor(env, email);
     throw new ApiError(409, "validation", "该邮箱已添加");
   }
 
@@ -117,7 +167,22 @@ export async function createUser(
   await saveUser(env, user);
   await putJson(env.FIDELIUS, keys.userEmail(email), { userId: user.id });
   await putJson(env.FIDELIUS, keys.usersMeta, meta);
+  await removeVisitor(env, email);
   return user;
+}
+
+export async function provisionVisitor(env: Env, email: string): Promise<User> {
+  const normalized = normalizeEmail(email);
+  if (!normalized.includes("@")) throw new ApiError(400, "validation", "邮箱无效");
+  const visitors = await listVisitors(env);
+  if (!visitors.some((item) => item.email === normalized)) {
+    throw new ApiError(404, "not_found", "没有该访问记录");
+  }
+  return createUser(env, {
+    email: normalized,
+    displayName: normalized.split("@")[0] || "成员",
+    role: "member",
+  });
 }
 
 export async function disableUser(env: Env, id: string, actor: User): Promise<User> {

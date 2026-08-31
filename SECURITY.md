@@ -28,7 +28,7 @@
 
 本地开发使用 `wrangler.jsonc` 的 `access.dev` 模拟身份。若当前 Wrangler 不识别该字段，非 production 环境会回退到 `BOOTSTRAP_ADMIN_EMAIL`。生产必须设置 `ENVIRONMENT=production` 并启用 Access。不要把模拟身份用于生产。
 
-未登记邮箱返回 `{ code: "not_provisioned" }`。
+未登记邮箱返回 `{ code: "not_provisioned" }`。`GET /api/me` 同时把该 Access 邮箱写入访客列表，供管理员在团队页开通。访客不是用户：不占 20 人名额、不能开锁、不能读记录。访客列表仅管理员可见。
 
 ## 信封加密
 

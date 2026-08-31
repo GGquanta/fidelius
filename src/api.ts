@@ -58,6 +58,12 @@ export interface AuditEntry {
   detail: string;
 }
 
+export interface Visitor {
+  email: string;
+  firstSeenAt: string;
+  lastSeenAt: string;
+}
+
 export class ApiClientError extends Error {
   code: string;
   status: number;
@@ -200,6 +206,7 @@ export const api = {
   users: () =>
     request<{
       users: Array<User | { id: string; displayName: string; email: string }>;
+      visitors?: Visitor[];
       limit?: number;
       occupied?: number;
     }>("/api/users"),
@@ -207,6 +214,11 @@ export const api = {
     request<{ user: User }>("/api/users", {
       method: "POST",
       body: JSON.stringify({ email, displayName }),
+    }),
+  provisionUser: (email: string) =>
+    request<{ user: User }>("/api/users/provision", {
+      method: "POST",
+      body: JSON.stringify({ email }),
     }),
   disableUser: (id: string) =>
     request<{ user: User }>(`/api/users/${id}/disable`, { method: "POST" }),

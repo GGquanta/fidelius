@@ -50,7 +50,7 @@ function QuotaSkeleton() {
       <h2 className="text-sm text-muted">成员名额</h2>
       <Skeleton className="mt-3 block h-10 w-24 rounded-md" />
       <div className="mt-4 flex gap-1">
-        {Array.from({ length: 10 }, (_, index) => (
+        {Array.from({ length: 20 }, (_, index) => (
           <span key={index} className="h-2 flex-1 rounded-full bg-line" />
         ))}
       </div>
@@ -63,7 +63,7 @@ export function DashboardPage() {
   const { user } = useSession();
   const [records, setRecords] = useState<RecordMeta[] | null>(null);
   const [occupied, setOccupied] = useState<number | null>(null);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(20);
   const [err, setErr] = useState("");
   const admin = user?.role === "admin";
   const loading = records === null && !err;
@@ -75,7 +75,7 @@ export function DashboardPage() {
       .catch((error) => setErr(errorMessage(error)));
     if (user?.role === "admin") {
       void api.users().then((result) => {
-        setLimit(result.limit ?? 10);
+        setLimit(result.limit ?? 20);
         setOccupied(result.occupied ?? result.users.length);
       });
     }

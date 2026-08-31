@@ -17,6 +17,7 @@ import {
   AUDIT_PAGE_SIZE,
   UNLOCK_COOKIE,
   UNLOCK_TTL_SECONDS,
+  USER_LIMIT,
   jsonError,
   type Category,
   type RecordField,
@@ -296,7 +297,7 @@ app.get("/api/users", async (c) => {
   if (user.role === "admin") {
     return c.json({
       users: users.map(publicUser),
-      limit: 10,
+      limit: USER_LIMIT,
       occupied: users.filter((u) => u.status !== "disabled").length,
     });
   }

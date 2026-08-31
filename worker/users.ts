@@ -98,7 +98,7 @@ export async function createUser(
   const meta = await getUsersMeta(env);
   const occupied = (await listUsers(env)).filter((u) => u.status !== "disabled").length;
   if (occupied >= USER_LIMIT) {
-    throw new ApiError(400, "user_limit", "成员已达上限 10 人");
+    throw new ApiError(400, "user_limit", `成员已达上限 ${USER_LIMIT} 人`);
   }
 
   const timestamp = nowIso();

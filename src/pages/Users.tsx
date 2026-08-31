@@ -1,4 +1,4 @@
-import { UserAdd } from "reicon-react";
+import { UserAdd, UserMinus } from "reicon-react";
 import { FormEvent, useEffect, useState } from "react";
 import { api, type User } from "../api";
 import { Button } from "../components/Button";
@@ -11,7 +11,7 @@ export function UsersPage() {
   const toast = useToast();
   const { user } = useSession();
   const [users, setUsers] = useState<User[] | null>(null);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(20);
   const [occupied, setOccupied] = useState(0);
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -22,7 +22,7 @@ export function UsersPage() {
   async function load() {
     const result = await api.users();
     setUsers(result.users as User[]);
-    setLimit(result.limit ?? 10);
+    setLimit(result.limit ?? 20);
     setOccupied(result.occupied ?? result.users.length);
   }
 
@@ -107,43 +107,45 @@ export function UsersPage() {
             {err ? <p className="mt-4 text-sm text-danger">{err}</p> : null}
             <ul className="mt-8">
               {(users ?? []).map((item) => (
-                <li key={item.id} className="flex items-center justify-between gap-4 border-t border-line py-4">
-                  <div className="flex items-center gap-3">
-                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-accent-soft text-sm text-accent-ink">
-                      {item.displayName.slice(0, 1)}
-                    </span>
-                    <div>
-                      <p>{item.displayName}</p>
-                      <p className="mt-1 font-mono text-xs text-tertiary">
-                        {item.email} · {formatTime(item.createdAt)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`rounded-box px-2 py-0.5 text-xs ${statusClass(item.status)}`}>
+                <li
+                  key={item.id}
+                  className="grid grid-cols-[2.25rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 border-t border-line py-4"
+                >
+                  <span className="row-start-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-sm text-accent-ink">
+                    {item.displayName.slice(0, 1)}
+                  </span>
+                  <div className="col-start-2 row-start-1 flex min-w-0 items-center gap-2">
+                    <p className="min-w-0 truncate">{item.displayName}</p>
+                    <span
+                      className={`inline-flex shrink-0 whitespace-nowrap rounded-box px-2 py-0.5 text-xs ${statusClass(item.status)}`}
+                    >
                       {statusLabel(item.status)}
                     </span>
-                    {item.status !== "disabled" && item.role !== "admin" ? (
-                      <Button
-                        type="button"
-                        tone="tertiary"
-                        className="px-2 py-1"
-                        busy={disablingId === item.id}
-                        disabled={disablingId !== null}
-                        onClick={() => {
-                          if (disablingId) return;
-                          setDisablingId(item.id);
-                          void api
-                            .disableUser(item.id)
-                            .then(() => load())
-                            .catch((error) => setErr(errorMessage(error)))
-                            .finally(() => setDisablingId(null));
-                        }}
-                      >
-                        停用
-                      </Button>
-                    ) : null}
                   </div>
+                  {item.status !== "disabled" && item.role !== "admin" ? (
+                    <Button
+                      type="button"
+                      tone="tertiary"
+                      className="col-start-3 row-start-1 shrink-0 whitespace-nowrap bg-sunken text-ink !px-2 !py-1"
+                      busy={disablingId === item.id}
+                      disabled={disablingId !== null}
+                      onClick={() => {
+                        if (disablingId) return;
+                        setDisablingId(item.id);
+                        void api
+                          .disableUser(item.id)
+                          .then(() => load())
+                          .catch((error) => setErr(errorMessage(error)))
+                          .finally(() => setDisablingId(null));
+                      }}
+                    >
+                      <UserMinus size={16} />
+                      停用
+                    </Button>
+                  ) : null}
+                  <p className="col-span-2 col-start-2 row-start-2 min-w-0 truncate font-mono text-xs text-tertiary">
+                    {item.email} · {formatTime(item.createdAt)}
+                  </p>
                 </li>
               ))}
             </ul>
@@ -162,7 +164,7 @@ function UsersSkeleton() {
         <Skeleton className="inline-block h-8 w-16 rounded-md" />
       </div>
       <div className="mt-4 flex gap-1">
-        {Array.from({ length: 10 }, (_, index) => (
+        {Array.from({ length: 20 }, (_, index) => (
           <span key={index} className="h-2 flex-1 rounded-full bg-line" />
         ))}
       </div>
@@ -179,12 +181,16 @@ function UsersSkeleton() {
       </div>
       <ul className="mt-8">
         {Array.from({ length: 4 }, (_, index) => (
-          <li key={index} className="flex items-center gap-3 border-t border-line py-4">
-            <Skeleton className="h-9 w-9 shrink-0 rounded-full" />
-            <div className="min-w-0 flex-1">
-              <Skeleton className="block h-4 w-28 rounded-sm" />
-              <Skeleton className="mt-2 block h-3 w-48 rounded-sm" />
+          <li
+            key={index}
+            className="grid grid-cols-[2.25rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 border-t border-line py-4"
+          >
+            <Skeleton className="row-start-1 h-9 w-9 shrink-0 rounded-full" />
+            <div className="col-start-2 row-start-1 flex min-w-0 items-center gap-2">
+              <Skeleton className="block h-4 w-28 max-w-full rounded-sm" />
+              <Skeleton className="h-5 w-12 shrink-0 rounded-box" />
             </div>
+            <Skeleton className="col-span-2 col-start-2 row-start-2 block h-3 w-48 max-w-full rounded-sm" />
           </li>
         ))}
       </ul>

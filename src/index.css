@@ -858,7 +858,6 @@ html.dark .side-hit:hover {
 }
 
 .fx-copy {
-  display: inline-flex;
   animation: copy-pulse var(--dur-press) var(--ease-out);
 }
 

@@ -31,22 +31,16 @@ export function FieldBlock({
             <button
               type="button"
               onClick={() => void copy()}
-              className="fx-hover rounded-box p-1.5 text-muted hover:bg-hover hover:text-ink"
+              className="fx-hover inline-flex size-7 shrink-0 items-center justify-center rounded-box text-muted hover:bg-hover hover:text-ink"
               aria-label="复制"
             >
-              {copied ? (
-                <span className="fx-copy">
-                  <Check size={16} />
-                </span>
-              ) : (
-                <Copy size={16} />
-              )}
+              {copied ? <Check size={16} className="fx-copy" /> : <Copy size={16} />}
             </button>
             {long && onDownload ? (
               <button
                 type="button"
                 onClick={() => onDownload(field.label, field.value)}
-                className="fx-hover rounded-box p-1.5 text-muted hover:bg-hover hover:text-ink"
+                className="fx-hover inline-flex size-7 shrink-0 items-center justify-center rounded-box text-muted hover:bg-hover hover:text-ink"
                 aria-label="下载"
               >
                 <Download size={16} />

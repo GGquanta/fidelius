@@ -1,4 +1,4 @@
-export const USER_LIMIT = 10;
+export const USER_LIMIT = 20;
 export const UNLOCK_TTL_SECONDS = 600;
 export const ENROLL_TTL_SECONDS = 600;
 export const TOTP_FAIL_LIMIT = 5;

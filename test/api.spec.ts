@@ -1,6 +1,7 @@
 import { SELF } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 import { generateTotp } from "../worker/totp";
+import { USER_LIMIT } from "../worker/types";
 
 const ADMIN = "admin@example.com";
 const MEMBER = "member@example.com";
@@ -294,9 +295,9 @@ describe("fidelius api", () => {
     expect(adminSecret).toBeTruthy();
   });
 
-  it("enforces the ten-user limit", async () => {
+  it("enforces the user limit", async () => {
     await enroll(ADMIN);
-    for (let i = 0; i < 9; i += 1) {
+    for (let i = 0; i < USER_LIMIT - 1; i += 1) {
       const created = await json("/api/users", {
         method: "POST",
         headers: headers(ADMIN),

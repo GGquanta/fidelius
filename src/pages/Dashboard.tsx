@@ -136,7 +136,7 @@ export function DashboardPage() {
 
       {loading ? (
         <LoadingRegion className="mt-6">
-          <DashboardSkeleton admin={admin} occupied={occupied} limit={limit} />
+          <DashboardSkeleton admin={admin} occupied={occupied} limit={limit} pending={pending} />
         </LoadingRegion>
       ) : records ? (
         <>
@@ -242,10 +242,12 @@ function DashboardSkeleton({
   admin,
   occupied,
   limit,
+  pending,
 }: {
   admin: boolean;
   occupied: number | null;
   limit: number;
+  pending: number;
 }) {
   return (
     <>
